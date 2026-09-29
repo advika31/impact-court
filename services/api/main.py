@@ -103,20 +103,77 @@ def ingest_asset(body:IngestIn,background:BackgroundTasks,async_mode:bool=False,
  except ValueError as exc:raise HTTPException(400,str(exc))
  except Exception as exc:db.rollback();raise HTTPException(502,f"asset ingestion failed: {exc}")
 @app.get("/api/assets")
-def list_assets(project_id:Optional[str]=None,q:Optional[str]=None,limit:int=100,db:Session=Depends(get_db)):
- query=db.query(models.Asset)
- if project_id:query=query.filter(models.Asset.project_id==project_id)
- limit=max(1,min(limit,500))
- if not q:return query.order_by(models.Asset.created_at.desc()).limit(limit).all()
- try:v=vision.embed_text(q)
- except Exception as exc:raise HTTPException(502,f"query embedding failed: {exc}")
- if v is None:raise HTTPException(503,"semantic search requires GEMINI_API_KEY")
- return query.filter(models.Asset.embedding.isnot(None)).order_by(models.Asset.embedding.cosine_distance(v)).limit(limit).all()
+def list_assets(
+    project_id: str,
+    q: str | None = None,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    query = db.query(models.Asset).filter(
+        models.Asset.project_id == project_id
+    )
+
+    if q:
+        v = vision.embed_text(q)
+
+        query = query.filter(
+            models.Asset.embedding.isnot(None)
+        ).order_by(
+            models.Asset.embedding.cosine_distance(v)
+        )
+
+    assets = query.limit(limit).all()
+
+    return [
+        {
+            "id": asset.id,
+            "project_id": asset.project_id,
+            "cloudinary_public_id": asset.cloudinary_public_id,
+            "resource_type": asset.resource_type,
+            "sha256": asset.sha256,
+            "phash": asset.phash,
+            "capture_time": asset.capture_time,
+            "lat": asset.lat,
+            "lng": asset.lng,
+            "exif_json": asset.exif_json,
+            "activity_label": asset.activity_label,
+            "activity_score": asset.activity_score,
+            "tags": asset.tags,
+            "seg_area_json": asset.seg_area_json,
+            "count_json": asset.count_json,
+            "vision_json": asset.vision_json,
+            "forensics_json": asset.forensics_json,
+            "created_at": asset.created_at,
+        }
+        for asset in assets
+    ]
 @app.get("/api/assets/{asset_id}")
-def get_asset(asset_id:str,db:Session=Depends(get_db)):
- a=db.get(models.Asset,asset_id)
- if not a:raise HTTPException(404,"asset not found")
- return a
+def get_asset(asset_id: str, db: Session = Depends(get_db)):
+    a = db.get(models.Asset, asset_id)
+
+    if not a:
+        raise HTTPException(404, "asset not found")
+
+    return {
+        "id": a.id,
+        "project_id": a.project_id,
+        "cloudinary_public_id": a.cloudinary_public_id,
+        "resource_type": a.resource_type,
+        "sha256": a.sha256,
+        "phash": a.phash,
+        "capture_time": a.capture_time,
+        "lat": a.lat,
+        "lng": a.lng,
+        "exif_json": a.exif_json,
+        "activity_label": a.activity_label,
+        "activity_score": a.activity_score,
+        "tags": a.tags,
+        "seg_area_json": a.seg_area_json,
+        "count_json": a.count_json,
+        "vision_json": a.vision_json,
+        "forensics_json": a.forensics_json,
+        "created_at": a.created_at,
+    }
 
 @app.post("/api/compare")
 def compare_assets(body:CompareIn,db:Session=Depends(get_db)):

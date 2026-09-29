@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import Column,String,Float,DateTime,ForeignKey,JSON,Text
 from sqlalchemy.orm import declarative_base,relationship
 from pgvector.sqlalchemy import Vector
-EMBEDDING_DIMENSIONS=768
+EMBEDDING_DIMENSIONS=512
 Base=declarative_base()
 def gen_id():return uuid.uuid4().hex[:12]
 class Project(Base):

@@ -5,7 +5,7 @@ from google import genai
 from google.genai import types
 EMBEDDING_MODEL=os.getenv("VISION_EMBEDDING_MODEL","gemini-embedding-2")
 VISION_MODEL=os.getenv("VISION_LLM_MODEL",os.getenv("CLAIMS_LLM_MODEL","gemini-2.5-flash-lite"))
-EMBEDDING_DIMENSIONS=768
+EMBEDDING_DIMENSIONS=512
 @lru_cache(maxsize=1)
 def _client():
     key=os.getenv("GEMINI_API_KEY"); return genai.Client(api_key=key) if key else None
