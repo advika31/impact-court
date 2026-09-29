@@ -13,6 +13,13 @@ from services.api.db import get_db, init_db, SessionLocal
 from services.api import models, cloudinary_utils, vision
 from services.api.reporting import create_claim_report
 from packages.ledger.ledger import build_certificate, verify_certificate, sha256_json
+
+from services.api.db import get_db, init_db
+from services.api import models
+from services.api import cloudinary_utils
+from packages.vision import vision as vision_stub
+
+from packages.ledger.ledger import generate_keypair, build_certificate, verify_certificate
 from packages.forensics.forensics import analyze_asset, find_duplicate_candidates
 from packages.claims.claims import decompose, score_subclaim, apply_hard_fail, overall_verdict
 

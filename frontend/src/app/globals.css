@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  --crimson: #6d0808;
+  --mahogany: #2d0000;
+  --sage: #757d6f;
+  --cream: #eeead7;
+  --cream-muted: #d8d3be;
+  --dark-surface: #160202;
+  --dark-card: #240505;
+}
+
+body {
+  background-color: #eeead7;
+  color: #2d0000;
+  font-family: var(--font-poppins), "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbars matching the cream/crimson theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #e5e0cc;
+}
+::-webkit-scrollbar-thumb {
+  background: #b8a98e;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6d0808;
+}
+
+/* ColorHunt Editorial Design Utilities */
+.bg-crimson { background-color: #6d0808; }
+.bg-mahogany { background-color: #2d0000; }
+.bg-sage { background-color: #757d6f; }
+.bg-cream { background-color: #eeead7; }
+
+.text-crimson { color: #6d0808; }
+.text-crimson-light { color: #cf2929; }
+.text-cream { color: #eeead7; }
+.text-sage { color: #757d6f; }
+
+.border-crimson { border-color: rgba(109, 8, 8, 0.4); }
+.border-sage { border-color: rgba(117, 125, 111, 0.3); }
+.border-cream { border-color: rgba(238, 234, 215, 0.15); }
+
+/* Clean card style for light theme */
+.card-hero {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(109, 8, 8, 0.12);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 4px 24px 0 rgba(45, 0, 0, 0.06);
+}
+
+.card-hero:hover {
+  border-color: rgba(109, 8, 8, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(109, 8, 8, 0.1);
+  transform: translateY(-2px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glow-crimson {
+  box-shadow: 0 0 35px -5px rgba(109, 8, 8, 0.2);
+}
