@@ -31,7 +31,7 @@ from sqlalchemy.orm import Session
 from services.api.db import get_db, init_db
 from services.api import models
 from services.api import cloudinary_utils
-from services.api import vision_stub
+from packages.vision import vision as vision_stub
 
 from packages.ledger.ledger import generate_keypair, build_certificate, verify_certificate
 from packages.forensics.forensics import analyze_asset, find_duplicate_candidates
