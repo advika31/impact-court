@@ -90,6 +90,8 @@ def _perform_ingest(body,db):
  except Exception as exc:analysis={"available":False,"error":str(exc),"activity":None,"activity_confidence":None,"object_count":None,"count_confidence":None,"class_percentages":None,"description":None}
  if embedding_error:analysis["embedding_error"]=embedding_error
  label=analysis.get("activity") or "unknown"
+ f = make_json_safe(f)
+ analysis = make_json_safe(analysis)
  a=models.Asset(project_id=p.id,cloudinary_public_id=body.public_id,resource_type=body.resource_type,sha256=digest,phash=f["phash"],capture_time=f["exif"]["captured_at"],lat=f["exif"]["lat"],lng=f["exif"]["lng"],exif_json=f["exif"],embedding=embedding,activity_label=label,activity_score=analysis.get("activity_confidence"),tags=[label] if label!="unknown" else [],seg_area_json=analysis.get("class_percentages"),count_json={"sapling":{"count":analysis.get("object_count"),"score":analysis.get("count_confidence"),"available":analysis.get("available",False)}},vision_json=analysis,forensics_json=f)
  db.add(a);db.flush();_append_ledger(db,"asset",{"asset_id":a.id,"sha256":digest,"project_id":p.id});_append_ledger(db,"model_output",{"asset_id":a.id,"output":analysis,"embedding_model":vision.EMBEDDING_MODEL if embedding else None});db.commit();db.refresh(a)
  try:cloudinary_utils.set_structured_metadata(body.public_id,{"project_id":p.id,"activity_label":label,"verification_status":"flagged" if f["hard_fail"] else "unverified"},body.resource_type)
@@ -192,9 +194,18 @@ def compare_assets(body:CompareIn,db:Session=Depends(get_db)):
  c=models.Comparison(before_asset_id=before.id,after_asset_id=after.id,alignment_score=r.get("alignment_score"),class_delta_json=r.get("class_delta_pct"),transform_urls=urls,analysis_json=r);db.add(c);db.flush();_append_ledger(db,"transformation",{"comparison_id":c.id,"urls":urls,"analysis":r});db.commit();db.refresh(c);return c
 
 # Rank evidence by a cross-modal vector, then boost explicit activity matches. Keep contradictory forensic evidence.
-def _cosine(a,b):
- if not a or not b or len(a)!=len(b):return 0.
- dot=sum(x*y for x,y in zip(a,b));na=math.sqrt(sum(x*x for x in a));nb=math.sqrt(sum(y*y for y in b));return dot/(na*nb) if na and nb else 0.
+def _cosine(a, b):
+    if a is None or b is None:
+        return 0.0
+
+    if len(a) != len(b):
+        return 0.0
+
+    dot = sum(float(x) * float(y) for x, y in zip(a, b))
+    na = math.sqrt(sum(float(x) * float(x) for x in a))
+    nb = math.sqrt(sum(float(y) * float(y) for y in b))
+
+    return dot / (na * nb) if na and nb else 0.0
 def _retrieve(sc,assets):
  params=sc.params_json or {};query=" ".join([sc.statement,str(params.get("label","")),str(params.get("target","")),str(params.get("metric","")),str(params.get("site",""))])
  try:v=vision.embed_text(query)
@@ -202,9 +213,9 @@ def _retrieve(sc,assets):
  ranked=[]
  for a in assets:
   f=a.forensics_json or {}; geo=(f.get("geo_check") or {}).get("within_site");tim=(f.get("time_check") or {}).get("within_window")
-  semantic=_cosine(v,a.embedding) if v and a.embedding else 0.
+  semantic = _cosine(v, a.embedding) if v is not None and a.embedding is not None else 0.0
   terms={x.lower() for x in query.replace("_"," ").split() if len(x)>3};label=(a.activity_label or "").lower().replace("_"," ")
-  lexical=len(terms.intersection(label.split()))/max(1,len(terms));score=semantic if v and a.embedding else lexical
+  lexical=len(terms.intersection(label.split()))/max(1,len(terms));score = semantic if v is not None and a.embedding is not None else lexical
   if params.get("label") and str(params["label"]).lower().replace(" ","_") in (a.activity_label or "").lower():score+=.25
   if geo is not None:score+=.04
   if tim is not None:score+=.04
