@@ -192,7 +192,7 @@ def compare_assets(body:CompareIn,db:Session=Depends(get_db)):
 
 # Rank evidence by a cross-modal vector, then boost explicit activity matches. Keep contradictory forensic evidence.
 def _cosine(a,b):
- if not a or not b or len(a)!=len(b):return 0.
+ if a is None or b is None or len(a)==0 or len(b)==0 or len(a)!=len(b):return 0.
  dot=sum(x*y for x,y in zip(a,b));na=math.sqrt(sum(x*x for x in a));nb=math.sqrt(sum(y*y for y in b));return dot/(na*nb) if na and nb else 0.
 def _retrieve(sc,assets):
  params=sc.params_json or {};query=" ".join([sc.statement,str(params.get("label","")),str(params.get("target","")),str(params.get("metric","")),str(params.get("site",""))])
@@ -201,9 +201,10 @@ def _retrieve(sc,assets):
  ranked=[]
  for a in assets:
   f=a.forensics_json or {}; geo=(f.get("geo_check") or {}).get("within_site");tim=(f.get("time_check") or {}).get("within_window")
-  semantic=_cosine(v,a.embedding) if v and a.embedding else 0.
+  has_embedding=v is not None and a.embedding is not None
+  semantic=_cosine(v,a.embedding) if has_embedding else 0.
   terms={x.lower() for x in query.replace("_"," ").split() if len(x)>3};label=(a.activity_label or "").lower().replace("_"," ")
-  lexical=len(terms.intersection(label.split()))/max(1,len(terms));score=semantic if v and a.embedding else lexical
+  lexical=len(terms.intersection(label.split()))/max(1,len(terms));score=semantic if has_embedding else lexical
   if params.get("label") and str(params["label"]).lower().replace(" ","_") in (a.activity_label or "").lower():score+=.25
   if geo is not None:score+=.04
   if tim is not None:score+=.04
