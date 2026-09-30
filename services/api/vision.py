@@ -3,7 +3,6 @@ import json, os
 from functools import lru_cache
 from google import genai
 from google.genai import types
-from packages.vision import vision as local_vision
 EMBEDDING_MODEL=os.getenv("VISION_EMBEDDING_MODEL","gemini-embedding-2")
 VISION_MODEL=os.getenv("VISION_LLM_MODEL",os.getenv("CLAIMS_LLM_MODEL","gemini-2.5-flash-lite"))
 EMBEDDING_DIMENSIONS=512
@@ -49,6 +48,10 @@ def _trained_activity(b):
     if not enabled:
         return None
     try:
+        # Keep NumPy/OpenCLIP-related imports out of the API process unless
+        # this model is explicitly enabled. This reduces baseline RAM on the
+        # small Render plan as well as avoiding loading model weights.
+        from packages.vision import vision as local_vision
         bundle=local_vision._get_classifier_bundle()
         if not bundle:return None
         clip_model,preprocess=local_vision._get_clip()
