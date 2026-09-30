@@ -1,256 +1,44 @@
 "use client";
 
 import React, { useState } from "react";
-import { AlertOctagon, CheckCircle2, UploadCloud, MapPin, Calendar, Copy, FileWarning, ShieldAlert } from "lucide-react";
+import { Loader2, ShieldAlert, UploadCloud } from "lucide-react";
+import { redteamCheck, RedTeamResult, uploadSuspectImage } from "@/lib/api";
 
-interface RedTeamArenaProps {
-  projectId: string;
-}
+export default function RedTeamArena({ projectId }: { projectId: string }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [report, setReport] = useState<RedTeamResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const run = async () => {
+    if (!file) return;
+    setBusy(true); setError(""); setReport(null);
+    try {
+      const publicId = await uploadSuspectImage(projectId, file);
+      setReport(await redteamCheck(projectId, publicId));
+    } catch (err) { setError(err instanceof Error ? err.message : "Red-team check failed"); }
+    finally { setBusy(false); }
+  };
+  const details = report?.report as Record<string, unknown> | undefined;
+  const geo = details?.geo_check as Record<string, unknown> | undefined;
+  const time = details?.time_check as Record<string, unknown> | undefined;
+  const exif = details?.exif as Record<string, unknown> | undefined;
+  const duplicates = (details?.duplicates as Array<Record<string, unknown>> | undefined) || [];
+  const flags = (details?.flags as string[] | undefined) || [];
 
-export default function RedTeamArena({ projectId }: RedTeamArenaProps) {
-  const [analyzing, setAnalyzing] = useState(false);
-  const [report, setReport] = useState<any>(null);
-
-  // Pre-configured red-team samples for quick testing during the live pitch
-  const testSamples = [
-    {
-      id: "reuse",
-      title: "Fake 1: Cross-Project Reuse",
-      desc: "Re-uploaded evidence already registered to Sundarbans Project",
-      expected: "reused_from_other_project (pHash match 0.98)",
-      run: () => {
-        setAnalyzing(true);
-        setTimeout(() => {
-          setAnalyzing(false);
-          setReport({
-            verdict: "FAKE / FLAGGED",
-            hard_fail: true,
-            flags: ["reused_from_other_project"],
-            geo_check: { within_site: true, distance_km: 0.12 },
-            time_check: { within_window: true },
-            tamper: { ela_score: 0.04, flags: [] },
-            duplicates: [
-              {
-                asset_id: "asset_sundarbans_88",
-                project_id: "proj_coastal_02",
-                similarity: 0.98,
-                kind: "exact",
-              },
-            ],
-            exif: { has_exif: true, camera_make: "Sony", captured_at: "2026-04-10T12:00:00" },
-          });
-        }, 800);
-      },
-    },
-    {
-      id: "gps_spoof",
-      title: "Fake 2: Out-of-Bounds GPS",
-      desc: "Photo captured 42.5 km away from declared Tapajos perimeter",
-      expected: "geo_boundary_breach (> 2.0 km radius)",
-      run: () => {
-        setAnalyzing(true);
-        setTimeout(() => {
-          setAnalyzing(false);
-          setReport({
-            verdict: "FAKE / FLAGGED",
-            hard_fail: true,
-            flags: ["geo_check_failed_outside_radius"],
-            geo_check: { within_site: false, distance_km: 42.5 },
-            time_check: { within_window: true },
-            tamper: { ela_score: 0.03, flags: [] },
-            duplicates: [],
-            exif: { has_exif: true, lat: -2.019, lng: -55.08, captured_at: "2026-04-14T09:12:00" },
-          });
-        }, 800);
-      },
-    },
-    {
-      id: "stripped",
-      title: "Fake 3: Stripped Social Screenshot",
-      desc: "WhatsApp/Instagram screenshot with camera EXIF erased",
-      expected: "missing_exif_metadata",
-      run: () => {
-        setAnalyzing(true);
-        setTimeout(() => {
-          setAnalyzing(false);
-          setReport({
-            verdict: "SUSPICIOUS / WEAK",
-            hard_fail: false,
-            flags: ["missing_exif_metadata"],
-            geo_check: { within_site: false, distance_km: null },
-            time_check: { within_window: false },
-            tamper: { ela_score: 0.18, flags: ["compression_artifacts"] },
-            duplicates: [],
-            exif: { has_exif: false },
-          });
-        }, 800);
-      },
-    },
-    {
-      id: "doctored",
-      title: "Fake 4: Doctored / Edited",
-      desc: "Modified in editing software (Photoshop/GIMP header signature)",
-      expected: "editing_software_tag",
-      run: () => {
-        setAnalyzing(true);
-        setTimeout(() => {
-          setAnalyzing(false);
-          setReport({
-            verdict: "FAKE / FLAGGED",
-            hard_fail: true,
-            flags: ["editing_software_tag", "high_ela_tamper_score"],
-            geo_check: { within_site: true, distance_km: 0.35 },
-            time_check: { within_window: true },
-            tamper: { ela_score: 0.42, flags: ["cloning_inconsistency"] },
-            duplicates: [],
-            exif: { has_exif: true, software: "Adobe Photoshop 2025 (Windows)" },
-          });
-        }, 800);
-      },
-    },
-  ];
-
-  return (
-    <div className="flex flex-col gap-6 w-full">
-      {/* Header */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-rose-950/40 to-slate-900/80 border border-rose-500/20">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
-            <ShieldAlert className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-white">Adversarial Red-Team Arena</h3>
-            <p className="text-xs text-slate-400">
-              Judges: Upload suspect, reused, or doctored media. Watch Impact Court's forensic engine flag it live.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Test Vectors for the Pitch */}
-      <div className="flex flex-col gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          Instant Red-Team Test Vectors (Click to trigger live analysis)
-        </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-          {testSamples.map((sample) => (
-            <button
-              key={sample.id}
-              onClick={sample.run}
-              disabled={analyzing}
-              className="p-4 rounded-xl text-left bg-slate-900/70 hover:bg-slate-800/90 border border-slate-800 hover:border-rose-500/40 transition-all flex flex-col justify-between group disabled:opacity-50"
-            >
-              <div>
-                <span className="text-xs font-bold text-slate-200 group-hover:text-rose-400 block transition-colors">
-                  {sample.title}
-                </span>
-                <p className="text-[11px] text-slate-400 mt-1 leading-snug">{sample.desc}</p>
-              </div>
-              <span className="text-[10px] font-mono text-slate-500 mt-3 block">{sample.expected}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Forensic Report Display */}
-      {analyzing && (
-        <div className="p-8 rounded-2xl bg-slate-900/40 border border-slate-800 flex flex-col items-center justify-center gap-3 animate-pulse">
-          <div className="w-8 h-8 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
-          <span className="text-xs font-mono text-slate-400">
-            Scanning EXIF headers, perceptual hashes, geo-radius, and ELA tamper artifacts...
-          </span>
-        </div>
-      )}
-
-      {report && !analyzing && (
-        <div
-          className={`p-6 rounded-2xl border transition-all ${
-            report.hard_fail
-              ? "bg-rose-950/20 border-rose-500/40 glow-rose"
-              : "bg-amber-950/20 border-amber-500/30"
-          }`}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  report.hard_fail ? "bg-rose-500/20 text-rose-400" : "bg-amber-500/20 text-amber-400"
-                }`}
-              >
-                <AlertOctagon className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-lg font-bold text-white">{report.verdict}</span>
-                <p className="text-xs text-slate-400">
-                  {report.hard_fail
-                    ? "Adversarial check failed. Evidence rejected from certificate ledger."
-                    : "Caution: Evidence lacks verifiable cryptographic integrity tags."}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              {report.flags.map((flag: string, i: number) => (
-                <span
-                  key={i}
-                  className="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                >
-                  {flag}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Forensic breakdown grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-xs font-mono">
-            {/* Geo */}
-            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col gap-1">
-              <span className="text-slate-500 flex items-center gap-1.5 text-[11px]">
-                <MapPin className="w-3.5 h-3.5 text-cyan-400" /> GEOLOCATION
-              </span>
-              <span className={report.geo_check?.within_site ? "text-emerald-400" : "text-rose-400 font-bold"}>
-                {report.geo_check?.distance_km !== null
-                  ? `${report.geo_check.distance_km} km away (${
-                      report.geo_check.within_site ? "Within Radius" : "BREACH"
-                    })`
-                  : "NO GPS METADATA"}
-              </span>
-            </div>
-
-            {/* Time */}
-            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col gap-1">
-              <span className="text-slate-500 flex items-center gap-1.5 text-[11px]">
-                <Calendar className="w-3.5 h-3.5 text-purple-400" /> TIMELINE WINDOW
-              </span>
-              <span className={report.time_check?.within_window ? "text-emerald-400" : "text-rose-400 font-bold"}>
-                {report.time_check?.within_window ? "Captured In Window" : "OUTSIDE TIMELINE"}
-              </span>
-            </div>
-
-            {/* Duplicates */}
-            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col gap-1">
-              <span className="text-slate-500 flex items-center gap-1.5 text-[11px]">
-                <Copy className="w-3.5 h-3.5 text-amber-400" /> REUSE DETECTION
-              </span>
-              <span className={report.duplicates.length > 0 ? "text-rose-400 font-bold" : "text-emerald-400"}>
-                {report.duplicates.length > 0
-                  ? `REUSED (${(report.duplicates[0].similarity * 100).toFixed(0)}% pHash)`
-                  : "Unique Photo"}
-              </span>
-            </div>
-
-            {/* Software Tamper */}
-            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col gap-1">
-              <span className="text-slate-500 flex items-center gap-1.5 text-[11px]">
-                <FileWarning className="w-3.5 h-3.5 text-rose-400" /> SOFTWARE TAGS
-              </span>
-              <span className={report.exif?.software ? "text-rose-400 font-bold" : "text-slate-300"}>
-                {report.exif?.software || "Clean Camera Source"}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+  return <div className="flex flex-col gap-5 w-full">
+    <div className="p-6 rounded-2xl bg-gradient-to-r from-rose-950/40 to-slate-900/80 border border-rose-500/20 flex items-center gap-3"><ShieldAlert className="w-7 h-7 text-rose-400" /><div><h3 className="text-lg font-bold text-white">Red-team an image</h3><p className="text-xs text-slate-400">Upload a suspect image to Cloudinary and request a live forensic and duplicate check.</p></div></div>
+    <div className="flex flex-wrap items-end gap-3 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+      <label className="flex flex-col gap-2 text-xs text-slate-400">Suspect image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { setFile(e.target.files?.[0] || null); setReport(null); }} className="text-slate-200" /></label>
+      <button onClick={run} disabled={busy || !file} className="flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-2 text-xs font-bold text-white disabled:opacity-40">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />} Upload and analyze</button>
     </div>
-  );
+    {busy && <p role="status" className="text-sm text-slate-400">Uploading image and checking metadata and perceptual-hash matches…</p>}
+    {error && <p role="alert" className="text-sm text-rose-300">{error}</p>}
+    {report && <section className={`rounded-2xl border p-5 ${details?.hard_fail ? "border-rose-500/50 bg-rose-950/20" : "border-amber-500/30 bg-amber-950/10"}`}>
+      <h4 className="text-lg font-bold text-white">{report.verdict}</h4>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs"><div className="rounded-lg bg-slate-950/60 p-3"><span className="text-slate-500">LOCATION</span><p className="mt-1 text-slate-200">{geo?.distance_km == null ? "No GPS metadata" : `${geo.distance_km} km · ${geo.within_site ? "inside site" : "outside site"}`}</p></div><div className="rounded-lg bg-slate-950/60 p-3"><span className="text-slate-500">TIME WINDOW</span><p className="mt-1 text-slate-200">{time?.within_window == null ? "Unknown" : time.within_window ? "Inside project window" : "Outside project window"}</p></div><div className="rounded-lg bg-slate-950/60 p-3"><span className="text-slate-500">DUPLICATES</span><p className="mt-1 text-slate-200">{duplicates.length ? `${duplicates.length} candidate(s)` : "No matching stored hash"}</p></div><div className="rounded-lg bg-slate-950/60 p-3"><span className="text-slate-500">EDITING SOFTWARE</span><p className="mt-1 text-slate-200">{String(exif?.software || "Not identified")}</p></div></div>
+      {!!flags.length && <p className="mt-3 text-xs text-rose-300">Flags: {flags.join(", ")}</p>}
+      {duplicates.map((dup, i) => <p key={i} className="mt-2 text-xs text-slate-300">Possible match: asset {String(dup.asset_id)} in project {String(dup.project_id)} ({String(dup.kind)}, similarity {String(dup.similarity)})</p>)}
+      <p className="mt-3 text-[11px] text-slate-500">The forensic results are signals and heuristics; they do not prove that an image is authentic or manipulated.</p>
+    </section>}
+  </div>;
 }

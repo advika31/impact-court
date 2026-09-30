@@ -27,5 +27,20 @@ services:
       - .:/app
     command: uvicorn services.api.main:app --host 0.0.0.0 --port 8000 --reload
 
+  web:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command: npm run dev -- --hostname 0.0.0.0
+
 volumes:
   pgdata:
+  frontend_node_modules:

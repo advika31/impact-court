@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ShieldCheck,
   ArrowRight,
@@ -12,8 +12,6 @@ import {
   Scale,
   ShieldAlert,
   TreePine,
-  Sparkles,
-  ExternalLink,
 } from "lucide-react";
 
 // Customer-Facing Components
@@ -31,15 +29,33 @@ import RedTeamArena from "@/components/RedTeamArena";
 import CertificateVerifier from "@/components/CertificateVerifier";
 import ReportSocialCards from "@/components/ReportSocialCards";
 
-import { DEMO_PROJECTS, DEMO_ASSETS, Project } from "@/lib/api";
+import { Asset, Certificate, fetchAssets, fetchProjects, Project } from "@/lib/api";
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<"customer" | "admin">("customer");
-  const [selectedProject, setSelectedProject] = useState<Project>(DEMO_PROJECTS[0]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [apiError, setApiError] = useState("");
+  const [activeClaimId, setActiveClaimId] = useState<string | null>(null);
+  const [activeCertificate, setActiveCertificate] = useState<Certificate | null>(null);
   const [adminTab, setAdminTab] = useState<
     "overview" | "evidence" | "claim" | "compare" | "redteam" | "certificate" | "reports"
   >("overview");
-  const [activeCertId, setActiveCertId] = useState<string>("cert_8f2a_tapajos");
+  useEffect(() => {
+    fetchProjects().then((loaded) => {
+      setProjects(loaded);
+      setSelectedProject((current) => current || loaded[0] || null);
+    }).catch((err) => setApiError(err instanceof Error ? err.message : "Could not load projects"));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProject) { setAssets([]); return; }
+    let cancelled = false;
+    fetchAssets(selectedProject.id).then((items) => { if (!cancelled) setAssets(items); })
+      .catch((err) => { if (!cancelled) setApiError(err instanceof Error ? err.message : "Could not load evidence"); });
+    return () => { cancelled = true; };
+  }, [selectedProject?.id]);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -169,14 +185,15 @@ export default function Home() {
               <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-xl bg-[#2d0000] border border-[#eeead7]/15 text-xs text-[#eeead7]">
                 <TreePine className="w-3.5 h-3.5 text-[#cf2929]" />
                 <select
-                  value={selectedProject.id}
+                  value={selectedProject?.id ?? ""}
                   onChange={(e) => {
-                    const p = DEMO_PROJECTS.find((proj) => proj.id === e.target.value);
-                    if (p) setSelectedProject(p);
+                    setSelectedProject(projects.find((p) => p.id === e.target.value) || null);
+                    setActiveClaimId(null);
+                    setActiveCertificate(null);
                   }}
                   className="bg-transparent text-[#eeead7] font-semibold focus:outline-none cursor-pointer text-xs"
                 >
-                  {DEMO_PROJECTS.map((proj) => (
+                  {projects.map((proj) => (
                     <option key={proj.id} value={proj.id} className="bg-[#2d0000] text-[#eeead7]">
                       {proj.name}
                     </option>
@@ -199,20 +216,26 @@ export default function Home() {
           <div id="betterment">
             <CustomerBetterment />
           </div>
-          <CustomerUpload onSuccessNavigateToAdmin={() => setViewMode("admin")} />
+          <CustomerUpload
+            projects={projects}
+            onProjectCreated={(project) => { setProjects((current) => [project, ...current]); setSelectedProject(project); setApiError(""); }}
+            onSuccessNavigateToAdmin={(claimId) => { setActiveClaimId(claimId); setAdminTab("claim"); setViewMode("admin"); }}
+          />
         </main>
       )}
 
       {/* ===== ADMIN VIEW (unchanged) ===== */}
       {!isCustomer && (
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+          {apiError && <p role="alert" className="mb-5 rounded-xl border border-rose-500/40 bg-rose-950/30 p-4 text-sm text-rose-200">{apiError}</p>}
+          {!selectedProject ? <div className="rounded-2xl border border-slate-700 p-8 text-slate-200">Create a project in the customer portal to start. The application is connected to the backend and does not show sample records.</div> : <>
           {adminTab === "overview" && (
             <div className="flex flex-col gap-8">
-              <ProjectOverview project={selectedProject} />
+              <ProjectOverview project={selectedProject} assetCount={assets.length} />
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-[#757d6f]">
-                    Verified Field Evidence in Project Ledger
+                    Ingested Field Evidence for This Project
                   </h3>
                   <button
                     onClick={() => setAdminTab("evidence")}
@@ -221,7 +244,7 @@ export default function Home() {
                     View All in Vault &rarr;
                   </button>
                 </div>
-                <EvidenceVault assets={DEMO_ASSETS} />
+                <EvidenceVault assets={assets} projectId={selectedProject.id} />
               </div>
             </div>
           )}
@@ -235,7 +258,7 @@ export default function Home() {
                   Colab-trained vision model.
                 </p>
               </div>
-              <EvidenceVault assets={DEMO_ASSETS} />
+              <EvidenceVault assets={assets} projectId={selectedProject.id} />
             </div>
           )}
 
@@ -249,9 +272,12 @@ export default function Home() {
                 </p>
               </div>
               <ClaimCourt
+                key={selectedProject.id}
                 projectId={selectedProject.id}
-                onCertificateIssued={(certId) => {
-                  setActiveCertId(certId);
+                initialClaimId={activeClaimId}
+                onClaimSelected={setActiveClaimId}
+                onCertificateIssued={(certificate) => {
+                  setActiveCertificate(certificate);
                   setAdminTab("certificate");
                 }}
               />
@@ -263,17 +289,10 @@ export default function Home() {
               <div>
                 <h2 className="text-xl font-bold text-[#eeead7]">Before & After Change Intelligence</h2>
                 <p className="text-xs text-[#eeead7]/70 mt-1">
-                  SIFT / ORB feature matching calculates RANSAC homography. If aligned, SegFormer scene delta computes
-                  exact percentage changes.
+                    Choose two project assets to run the repository's alignment and vision comparison pipeline.
                 </p>
               </div>
-              <BeforeAfterSlider
-                beforeUrl="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80"
-                afterUrl="https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1200&q=80"
-                overlayUrl="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80"
-                alignmentScore={0.92}
-                classDeltas={{ vegetation: 31.2, waste: -60.0, built: 4.5, water: 0.0 }}
-              />
+              <BeforeAfterSlider assets={assets} />
             </div>
           )}
 
@@ -295,43 +314,11 @@ export default function Home() {
               <div>
                 <h2 className="text-xl font-bold text-[#eeead7]">Cryptographic Certificate Viewer</h2>
                 <p className="text-xs text-[#eeead7]/70 mt-1">
-                  Public verification proof. Every asset hash, transformation URL, and verdict is bound to a signed
-                  Merkle root.
+                  Verify the certificate signature and Merkle proofs issued by the backend.
                 </p>
               </div>
               <CertificateVerifier
-                certificateId={activeCertId}
-                claimId="claim_tapajos_88"
-                merkleRoot="8f2a99c01b4478d10b7a8c4390e1f77d612e55a8f430c9e0117a55cbbd8a4f10"
-                signature="4a7b98d011fc5489e023ba78cc019a84eb7710c558da90327fbc990144a83311e98a54cd78a011"
-                publicKey="ed25519:7a88cf109e2231ab78bc90014a55219e88d014bc"
-                leaves={[
-                  {
-                    kind: "asset",
-                    sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                    label: "saplings_field_01.jpg",
-                  },
-                  {
-                    kind: "asset",
-                    sha256: "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
-                    label: "nursery_bed_02.jpg",
-                  },
-                  {
-                    kind: "transformation",
-                    sha256: "9a01cf881024bd7810e445acb71190bc44e10788aa90bc7711204855cf889901",
-                    label: "cloudinary:w_1200,h_630,c_fill,l_badge",
-                  },
-                  {
-                    kind: "model_output",
-                    sha256: "1488da01192e44cb78a901ff8899ca11400287bc9011ea88440019da55cf77a1",
-                    label: "Colab LogisticRegression (tree_planting: 96%)",
-                  },
-                  {
-                    kind: "verdict",
-                    sha256: "33ac88109f2201bc89a014eebc90117766551044bb7890cc1123547890aa11bc",
-                    label: "sc1_supported_confidence_0.94",
-                  },
-                ]}
+                certificate={activeCertificate}
               />
             </div>
           )}
@@ -340,13 +327,12 @@ export default function Home() {
             <div className="flex flex-col gap-4">
               <div>
                 <h2 className="text-xl font-bold text-[#eeead7]">Campaign Deliverables & Reports</h2>
-                <p className="text-xs text-[#eeead7]/70 mt-1">
-                  Visual reports and campaign-ready social cards generated via Cloudinary dynamic transformation URLs.
-                </p>
+                <p className="text-xs text-[#eeead7]/70 mt-1">Generate and download an audit PDF from a claim and its persisted evidence.</p>
               </div>
-              <ReportSocialCards />
+              <ReportSocialCards claimId={activeClaimId} projectId={selectedProject.id} assets={assets} />
             </div>
           )}
+          </>}
         </main>
       )}
 
@@ -366,7 +352,7 @@ export default function Home() {
           <div className="flex items-center gap-4 text-[11px]">
             <span>Cloudinary Media Engine</span>
             <span>&bull;</span>
-            <span>OpenCLIP ViT-B/32</span>
+            <span>Trained activity model</span>
             <span>&bull;</span>
             <span>Ed25519 Merkle Proofs</span>
           </div>

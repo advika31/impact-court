@@ -6,3 +6,6 @@ __pycache__/
 *.egg-info/
 reports/
 .venv/
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local

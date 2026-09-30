@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
-import { MapPin, Calendar, Compass, ShieldCheck, TreePine, Award, CheckCircle2 } from "lucide-react";
+import { MapPin, Calendar, ShieldCheck } from "lucide-react";
 import { Project } from "@/lib/api";
 
 interface ProjectOverviewProps {
   project: Project;
+  assetCount: number;
   onSelectProject?: (p: Project) => void;
 }
 
-export default function ProjectOverview({ project }: ProjectOverviewProps) {
+export default function ProjectOverview({ project, assetCount }: ProjectOverviewProps) {
   return (
     <div className="flex flex-col gap-6 w-full">
       {/* Hero Banner */}
@@ -20,7 +21,7 @@ export default function ProjectOverview({ project }: ProjectOverviewProps) {
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                <ShieldCheck className="w-3.5 h-3.5" /> Active Audit Protocol
+                <ShieldCheck className="w-3.5 h-3.5" /> Project Workspace
               </span>
               <span className="text-xs font-mono text-slate-500">{project.id}</span>
             </div>
@@ -48,23 +49,21 @@ export default function ProjectOverview({ project }: ProjectOverviewProps) {
           {/* Quick Metrics Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex flex-col">
-              <span className="text-[10px] uppercase font-mono text-slate-500">Verified Evidence</span>
-              <span className="text-xl font-bold text-white mt-1">38</span>
-              <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> 100% On-Chain
-              </span>
+              <span className="text-[10px] uppercase font-mono text-slate-500">Ingested Evidence</span>
+              <span className="text-xl font-bold text-white mt-1">{assetCount}</span>
+              <span className="text-[10px] text-slate-400 font-mono">Stored for this project</span>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex flex-col">
-              <span className="text-[10px] uppercase font-mono text-slate-500">Measured Delta</span>
-              <span className="text-xl font-bold text-emerald-400 mt-1">+31.2%</span>
-              <span className="text-[10px] text-slate-400 font-mono">Vegetation Cover</span>
+              <span className="text-[10px] uppercase font-mono text-slate-500">Project Radius</span>
+              <span className="text-xl font-bold text-emerald-400 mt-1">{project.site_radius_km} km</span>
+              <span className="text-[10px] text-slate-400 font-mono">Declared site boundary</span>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex flex-col col-span-2 sm:col-span-1">
-              <span className="text-[10px] uppercase font-mono text-slate-500">Certificates</span>
-              <span className="text-xl font-bold text-cyan-400 mt-1">2</span>
-              <span className="text-[10px] text-cyan-300/80 font-mono">Ed25519 Signed</span>
+              <span className="text-[10px] uppercase font-mono text-slate-500">Evidence Window</span>
+              <span className="text-xs font-bold text-cyan-400 mt-1">{project.window_start} – {project.window_end}</span>
+              <span className="text-[10px] text-cyan-300/80 font-mono">Project settings</span>
             </div>
           </div>
         </div>

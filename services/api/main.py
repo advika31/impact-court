@@ -64,6 +64,9 @@ def verify_ledger(db:Session=Depends(get_db)):
 @app.post("/api/projects")
 def create_project(body:ProjectIn,db:Session=Depends(get_db)):
  p=models.Project(**body.model_dump());db.add(p);db.commit();db.refresh(p);return p
+@app.get("/api/projects")
+def list_projects(db:Session=Depends(get_db)):
+ return db.query(models.Project).order_by(models.Project.created_at.desc()).all()
 @app.get("/api/projects/{project_id}")
 def get_project(project_id:str,db:Session=Depends(get_db)):
  p=db.get(models.Project,project_id)
@@ -114,13 +117,17 @@ def list_assets(
     )
 
     if q:
-        v = vision.embed_text(q)
-
-        query = query.filter(
-            models.Asset.embedding.isnot(None)
-        ).order_by(
-            models.Asset.embedding.cosine_distance(v)
-        )
+        try:v = vision.embed_text(q)
+        except Exception:v = None
+        if v:
+            query = query.filter(
+                models.Asset.embedding.isnot(None)
+            ).order_by(
+                models.Asset.embedding.cosine_distance(v)
+            )
+        else:
+            term=f"%{q.strip()}%"
+            query=query.filter(or_(models.Asset.activity_label.ilike(term),models.Asset.cloudinary_public_id.ilike(term)))
 
     assets = query.limit(limit).all()
 
@@ -289,6 +296,12 @@ def create_claim(body:ClaimIn,db:Session=Depends(get_db)):
  ctx={"name":p.name,"site_lat":p.site_lat,"site_lng":p.site_lng,"window_start":p.window_start,"window_end":p.window_end}
  for x in decompose(body.text,ctx):db.add(models.SubClaim(claim_id=c.id,type=x.get("type","activity"),statement=x.get("statement",body.text),params_json=x.get("params",{})))
  db.commit();return {"claim":c,"subclaims":db.query(models.SubClaim).filter(models.SubClaim.claim_id==c.id).all()}
+@app.get("/api/claims/{claim_id}")
+def get_claim(claim_id:str,db:Session=Depends(get_db)):
+ claim=db.get(models.Claim,claim_id)
+ if not claim:raise HTTPException(404,"claim not found")
+ subclaims=db.query(models.SubClaim).filter(models.SubClaim.claim_id==claim_id).all()
+ return {"claim":claim,"subclaims":subclaims}
 @app.post("/api/claims/{claim_id}/audit")
 def audit_claim(claim_id:str,background:BackgroundTasks,async_mode:bool=False,db:Session=Depends(get_db)):
  if not db.get(models.Claim,claim_id):raise HTTPException(404,"claim not found")
@@ -362,13 +375,25 @@ def create_report(body:ReportIn,db:Session=Depends(get_db)):
  project=db.get(models.Project,claim.project_id);subs=db.query(models.SubClaim).filter(models.SubClaim.claim_id==claim.id).all();evidence={}
  for s in subs:evidence[s.id]=db.query(models.Evidence,models.Asset).join(models.Asset,models.Evidence.asset_id==models.Asset.id).filter(models.Evidence.subclaim_id==s.id).all()
  cert=db.query(models.Certificate).filter(models.Certificate.claim_id==claim.id).order_by(models.Certificate.created_at.desc()).first()
+ cert_valid=False
+ if cert:
+  cert_payload={"claim_id":cert.claim_id,"merkle_root":cert.merkle_root,"signature":cert.signature,"public_key":cert.public_key,"leaves":cert.leaves_json,"proofs":cert.proofs_json}
+  cert_valid=bool(verify_certificate(cert_payload).get("valid"))
  thumbnails={}
  for pairs in evidence.values():
   for _,asset in pairs:
    try:thumbnails[asset.id]=cloudinary_utils.fetch_asset_bytes(asset.cloudinary_public_id,asset.resource_type)
    except Exception:pass
- pdf=create_claim_report(claim,project,subs,evidence,cert,thumbnails);REPORT_DIR.mkdir(parents=True,exist_ok=True);rid=models.gen_id();path=REPORT_DIR/f"{rid}.pdf";path.write_bytes(pdf)
- db.add(models.Report(id=rid,claim_id=claim.id,file_path=str(path.resolve())));_append_ledger(db,"report",{"report_id":rid,"claim_id":claim.id,"sha256":hashlib.sha256(pdf).hexdigest()});db.commit();return {"report_id":rid,"status":"completed","download_url":f"/api/reports/{rid}","size_bytes":len(pdf)}
+ social_cards=[]
+ if cert_valid:
+  seen=set()
+  for pairs in evidence.values():
+   for _,asset in pairs:
+    if asset.id not in seen:
+     seen.add(asset.id);social_cards.append({"asset_id":asset.id,"source_public_id":asset.cloudinary_public_id,"url":cloudinary_utils.build_verified_badge_url(asset.cloudinary_public_id)})
+ pdf=create_claim_report(claim,project,subs,evidence,cert,thumbnails,social_cards,cert_valid if cert else None);REPORT_DIR.mkdir(parents=True,exist_ok=True);rid=models.gen_id();path=REPORT_DIR/f"{rid}.pdf";path.write_bytes(pdf)
+ db.add(models.Report(id=rid,claim_id=claim.id,file_path=str(path.resolve())));_append_ledger(db,"report",{"report_id":rid,"claim_id":claim.id,"sha256":hashlib.sha256(pdf).hexdigest(),"social_cards":social_cards});db.commit()
+ return {"report_id":rid,"status":"completed","download_url":f"/api/reports/{rid}","size_bytes":len(pdf),"social_cards":social_cards}
 @app.get("/api/reports/{report_id}")
 def download_report(report_id:str,db:Session=Depends(get_db)):
  r=db.get(models.Report,report_id)

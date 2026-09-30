@@ -1,151 +1,151 @@
-# Step-by-step testing guide
+# Step-by-step full-stack test guide
 
-This guide tests the changes in the local checkout. API keys and a reachable
-Cloudinary account are needed for the full image flow. Gemini calls may incur
-usage charges, and visual counts/change measurements are estimates.
+This walkthrough exercises the Next.js UI, FastAPI API, PostgreSQL, Cloudinary,
+the Gemini vision/claim services, the trained activity classifier when its
+weights and encoder load, evidence auditing, certificates, and reports. A
+Cloudinary account and Gemini API key are required for the complete media flow.
+Vision counts and scene measurements are estimates and should not be treated as
+ground truth.
 
-## 1. Configure and start
+## 1. Configure credentials and signing key
 
-1. In the repository root, create and activate a virtual environment, then
-   install Python dependencies:
+1. From the repository root, copy the environment template and edit it:
 
    ```powershell
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   python -m pip install -r requirements.txt
+   Copy-Item .env.example .env
+   notepad .env
    ```
 
-2. Copy `.env.example` to `.env` with `Copy-Item .env.example .env`, then
-   edit it. Set Cloudinary credentials and a valid
-   `GEMINI_API_KEY`. Keep the database URL as
-   `postgresql://impact:impact@db:5432/impact_court` for Compose.
-3. Generate the certificate signing key and paste the printed
-   `LEDGER_PRIVATE_KEY` into `.env`:
+2. Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
+   `CLOUDINARY_API_SECRET`, and `GEMINI_API_KEY`. Keep
+   `DATABASE_URL=postgresql://impact:impact@db:5432/impact_court` for Compose.
+   Leave `NEXT_PUBLIC_API_URL=http://localhost:8000` for local Compose use.
+3. Generate an Ed25519 signing key. If PyNaCl is not installed in your local
+   Python, install just that package first:
 
    ```powershell
+   python -m pip install PyNaCl
    python generate_keys.py
    ```
 
-4. Start PostgreSQL and the API:
+4. Copy the printed `LEDGER_PRIVATE_KEY=...` value into `.env`. Do not share
+   or commit the private key.
 
-   ```powershell
-   docker compose up --build
-   ```
+## 2. Start the complete app
 
-   Wait until the API says it is ready. On startup, it enables pgvector,
-   migrates the old JSON embedding column if present, and creates the new
-   tables/index. Open <http://localhost:8000/docs>.
+From the repository root, run:
 
-## 2. Confirm readiness and vector setup
-
-1. Open <http://localhost:8000/health>; expect `{"status":"ok"}`.
-2. In Swagger `/docs`, inspect `GET /api/assets`. It accepts an optional
-   `q` query for semantic search. This needs a Gemini key and ingested assets
-   with generated vectors; an empty database correctly returns an empty list.
-
-## 3. Create a project and ingest evidence
-
-1. In `/docs`, call `POST /api/projects` with a test site, coordinates, radius,
-   and time window. Save the returned project `id`.
-2. Call `GET /api/upload-signature?project_id=<id>`.
-3. Upload a real image to Cloudinary using those signed values and the folder
-   returned by the API. Save the resulting `public_id`. Use an original photo
-   if you want EXIF GPS/time checks to have data.
-4. Call `POST /api/assets/ingest?async_mode=true` with:
-
-   ```json
-   {"project_id":"<id>","public_id":"<public_id>","resource_type":"image"}
-   ```
-
-5. Copy `job_id` from the response and poll `GET /api/jobs/{job_id}` until
-   `status` is `completed` or `failed`. A completed result includes `asset_id`.
-   Open `GET /api/assets/{asset_id}` and inspect its forensics, vision output,
-   count, segmentation estimates, and vector-backed record.
-6. Ingest at least two images from the same project if you want to test
-   before/after comparison and change claims.
-
-## 4. Test semantic search
-
-Call `GET /api/assets?project_id=<id>&q=people planting young trees`. The API
-embeds the query in Gemini's image/text vector space and orders matching
-project images by pgvector cosine distance. If Gemini is not configured, the
-endpoint returns HTTP 503 instead of pretending the placeholder vectors are
-meaningful.
-
-## 5. Create a claim, audit it, and inspect evidence
-
-1. Call `POST /api/claims` with a claim such as:
-
-   ```json
-   {"project_id":"<id>","text":"We planted 50 saplings at this site during June"}
-   ```
-
-2. Save `claim.id` and inspect the returned sub-claims. Gemini should create
-   checkable sub-claims; if it fails, the rule-based fallback keeps creation
-   available, though it may produce only a generic activity sub-claim.
-3. Call `POST /api/claims/{claim_id}/audit?async_mode=true`. Poll the returned
-   job URL until it completes. To run in the request instead, omit
-   `async_mode=true`.
-4. Call `GET /api/claims/{claim_id}/evidence`. Confirm evidence rows connect
-   sub-claims to assets and include `supports`, `contradicts`, or `context`,
-   relevance, forensic flags, and any observed count/change details.
-5. Check the audit response or re-read the claim in `/docs`. Count agreement
-   sums visual model estimates across matched images and compares that total
-   with the claim's number; repeated views can count the same objects more
-   than once. If the
-   sub-claim contains a change metric, the model compares the earliest and
-   latest matched images and scores agreement with the requested direction.
-   Treat both as approximate visual estimates.
-
-## 6. Test before/after comparison
-
-Call `POST /api/compare` with two ingested asset IDs from the same scene:
-
-```json
-{"before_asset_id":"<before_id>","after_asset_id":"<after_id>"}
+```powershell
+docker compose up --build
 ```
 
-Inspect `alignment_score`, `class_delta_json`, `analysis_json`, and the
-Cloudinary transformation URL. Misaligned views may produce unreliable
-changes; the model's alignment and measurement are estimates.
+Compose starts PostgreSQL with pgvector, the FastAPI service, and the Next.js
+web app. Wait for all three services to finish starting. Open:
 
-## 7. Test PDF report generation
+- Web app: <http://localhost:3000>
+- API health: <http://localhost:8000/health>
+- Interactive API docs: <http://localhost:8000/docs>
 
-1. Call `POST /api/reports` with:
+The health endpoint should return `{"status":"ok"}`. If you add the signing
+key after the containers have started, restart the API with
+`docker compose restart api`.
 
-   ```json
-   {"claim_id":"<claim_id>"}
-   ```
+## 3. Create a project and upload evidence in the UI
 
-2. Open the returned `download_url` in a browser or call the GET route. Confirm
-   the PDF includes project and claim details, verdict/confidence, sub-claims,
-   matched evidence, available thumbnails, flags, and the latest certificate
-   when one exists. The PDF is also saved under the local `reports/` folder.
+1. On the customer portal, create a project with its site coordinates, radius,
+   and evidence date window. If projects already exist, choose one from the
+   selector.
+2. Enter an impact claim, for example: `We planted 50 saplings at this site
+   during June.`
+3. Select one or more real JPEG, PNG, or WebP images and submit. The browser
+   requests a signed upload configuration from FastAPI, uploads each image to
+   Cloudinary, and asks the API to ingest it.
+4. Wait for the UI to report successful ingestion and claim decomposition. The
+   API calculates hashes, checks available EXIF/location/time data, runs the
+   configured vision services, stores each asset, and returns the claim ID.
+5. Open the Admin ML Portal. The project selector, evidence vault, asset search,
+   and project evidence count should show records from PostgreSQL, not sample
+   records.
 
-## 8. Test certificate traceability and tamper checks
+For photos without EXIF, the app should show missing GPS or capture time rather
+than invent coordinates. To test before/after and duplicate matching, ingest at
+least two images, and ingest a copy of one image into another project.
 
-1. Call `POST /api/claims/{claim_id}/certificate`.
-2. Inspect `leaves` for `asset`, `model_output`, `transformation`,
-   `evidence_link`, and `verdict` entries as applicable.
-3. Call `GET /api/verify/{certificate_id}` and expect `verification.valid` to
-   be `true`.
-4. Call `GET /api/ledger/verify`; expect `valid: true` and a positive entry
-   count. This checks the database event hash chain.
+## 4. Audit the claim and inspect evidence
 
-## 9. Test duplicate red-team behavior
+1. In Claim Court, the submitted claim should load with its decomposed
+   sub-claims. You can also enter a claim directly in this screen.
+2. Select **Run evidence audit**. The UI polls the backend job until it
+   completes and then displays the persisted verdict, confidence, and reasons.
+3. Use `/docs` to call `GET /api/claims/{claim_id}/evidence`. Each returned row
+   should link a sub-claim to an asset with a support, contradiction, or context
+   role.
+4. Try the Evidence Vault search box. With a Gemini key, it uses vector search;
+   without one, the API falls back to activity/public-ID text filtering.
 
-Upload the same image again to Cloudinary and call
-`POST /api/redteam/check?project_id=<id>&public_id=<duplicate_public_id>`.
-The report should list the matching ingested asset, add `reused_image`, and
-return `FAKE / FLAGGED` even when the match is from the same project.
+## 5. Compare two project images
 
-## Expected boundaries
+1. Open **Before & After** in the Admin portal.
+2. Choose different ingested images in the Before and After selectors, then
+   press **Analyze pair**.
+3. Check the returned vision analysis, alignment score, estimated scene deltas,
+   and Cloudinary transformation link. The model values are estimates, and
+   unrelated camera views may not be meaningfully comparable.
 
-- Jobs are stored in PostgreSQL, but execution uses FastAPI's in-process
-  background-task facility. They are not a separate durable queue; a restart
-  marks in-flight jobs failed.
-- Gemini vision estimates are not ground truth. If Gemini is unconfigured,
-  image vectors and visual measurements are unavailable and semantic search
-  returns a clear error.
-- Reports are saved on the API host under `reports/`; keep that folder mounted
-  or use shared storage before running multiple API containers.
+## 6. Run the red-team check
+
+1. Open **Red-Team Arena**, choose an image, and press **Upload and analyze**.
+2. The image is uploaded to Cloudinary using a server-signed request, then
+   checked against project metadata and stored perceptual hashes.
+3. Re-uploading a previously ingested image should return a duplicate candidate
+   and a flagged result. A new image with no matching stored asset may still be
+   flagged for out-of-bounds location/time metadata.
+
+## 7. Issue and verify a certificate
+
+1. Return to the audited claim in Claim Court and choose **Issue certificate**.
+   The `LEDGER_PRIVATE_KEY` must be set in `.env`.
+2. The Verification Proof tab should display the returned certificate ID,
+   Merkle root, signature, public key, and leaves.
+3. Press **Re-verify with API**. The result should show valid if the stored
+   certificate's Merkle proof and signature are intact.
+4. In `/docs`, `GET /api/ledger/verify` should return `valid: true` if the
+   append-only ledger chain is consistent.
+
+## 8. Generate a report and Cloudinary social cards
+
+1. Open **Campaign & Reports** for the selected project. The claim created in
+   the upload flow should be selected.
+2. Press **Generate PDF report**, then open/download the returned PDF.
+3. If the claim has a certificate and persisted evidence links, the response
+   also includes Cloudinary verified-badge transformation URLs for social-card
+   previews. Without a certificate, the PDF is still generated but no verified
+   social cards are returned.
+
+## 9. Useful direct API checks
+
+- `GET /api/projects` — list persisted projects
+- `GET /api/assets?project_id=<id>&q=planting` — search project evidence
+- `POST /api/claims/{claim_id}/audit?async_mode=true` — queue an audit
+- `GET /api/jobs/{job_id}` — poll ingest/audit job status
+- `POST /api/reports` with `{"claim_id":"<id>"}` — generate report
+- `GET /api/reports/{report_id}` — download report
+
+## Troubleshooting and limitations
+
+- **Cloudinary upload fails:** check the cloud name, key, secret, and that the
+  API container has reloaded after `.env` changes.
+- **Vision outputs are unavailable:** check `GEMINI_API_KEY` and API logs. The
+  trained classifier is used only if `models/activity_classifier_final.pkl`
+  and its OpenCLIP encoder load; it does not replace Gemini embeddings or
+  image-count/change interpretation.
+- **No preview images:** ensure `CLOUDINARY_CLOUD_NAME` is set in `.env`; the
+  browser uses it to form Cloudinary delivery URLs.
+- **Audits/reports are slow:** image analysis can call Gemini for each asset.
+  Jobs use FastAPI in-process background tasks, not a durable external queue;
+  restarting the API marks queued/running jobs failed.
+- **Certificate signing fails:** set `LEDGER_PRIVATE_KEY` in `.env` and restart
+  the API container.
+- **Report PDF links stop working after container removal:** generated files
+  live under the API `reports/` directory. Keep it mounted or adopt shared
+  object storage before deploying multiple API replicas.

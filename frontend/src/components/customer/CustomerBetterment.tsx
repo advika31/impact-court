@@ -6,24 +6,24 @@ import { Check, X, TrendingUp, Clock, Shield, FileCheck, Users } from "lucide-re
 export default function CustomerBetterment() {
   const impactMetrics = [
     {
-      value: "94%",
-      label: "Faster Processing",
-      desc: "Instant automated cross-examination replaces months of manual paperwork and site visits",
+      value: "EXIF",
+      label: "Forensic context",
+      desc: "Capture time, GPS, SHA-256 and perceptual hashes are collected when available",
     },
     {
-      value: "0%",
-      label: "Undetected Reuse",
-      desc: "pHash + CLIP cosine matching catches every duplicate across all project databases",
+      value: "ML",
+      label: "Visual analysis",
+      desc: "The configured vision services estimate activity, object counts and scene composition",
     },
     {
-      value: "100%",
-      label: "Tamper Traceability",
-      desc: "Every claim references Cloudinary public IDs and SHA-256 byte hashes on a Merkle tree",
+      value: "SHA-256",
+      label: "Traceable evidence",
+      desc: "Asset and analysis records can be included in signed Merkle certificates",
     },
     {
-      value: "3.2x",
-      label: "Capital Acceleration",
-      desc: "Funders release tranches faster when evidence is cryptographically proven and verifiable",
+      value: "PDF",
+      label: "Audit reports",
+      desc: "Generate an exportable claim report from the claim, evidence links and certificate",
     },
   ];
 
@@ -31,32 +31,32 @@ export default function CustomerBetterment() {
     {
       dimension: "Verification Speed",
       icon: Clock,
-      legacy: "3–6 months of manual auditor site visits",
-      ours: "Under 3 seconds via automated vision ML pipeline",
+      legacy: "Manual review can require collecting records and coordinating site visits",
+      ours: "Ingestion, claim audit and report generation are available in the app",
     },
     {
       dimension: "Fraud Defense",
       icon: Shield,
-      legacy: "Zero technical defense; relies on honor system",
-      ours: "Catches reused photos, spoofed GPS, edited pixels",
+      legacy: "Reused or out-of-context photos may be difficult to identify consistently",
+      ours: "Checks metadata, project boundaries and duplicate perceptual hashes; heuristics can miss manipulation",
     },
     {
       dimension: "Change Measurement",
       icon: TrendingUp,
-      legacy: "Subjective before/after with unmeasured estimates",
-      ours: "SIFT homography + SegFormer pixel delta (e.g. +31.2%)",
+      legacy: "Visual changes may be described without a recorded comparison result",
+      ours: "The vision service returns an estimated alignment and scene delta for selected image pairs",
     },
     {
       dimension: "Proof of Authenticity",
       icon: FileCheck,
-      legacy: "Unsigned PDFs that can be altered unnoticed",
-      ours: "Ed25519 Merkle tree; altering 1 byte breaks verification",
+      legacy: "A standalone report does not necessarily include verifiable signatures",
+      ours: "Ed25519-signed certificates can be re-verified by the API",
     },
     {
       dimension: "Public Auditability",
       icon: Users,
-      legacy: "Opaque internal donor reports behind closed doors",
-      ours: "Public 1-click verification link with full evidence lineage",
+      legacy: "Auditors may need separate access to evidence and verification details",
+      ours: "Certificate data and persisted evidence links are available for verification",
     },
   ];
 
@@ -71,7 +71,7 @@ export default function CustomerBetterment() {
           Measurable, Verifiable, Undeniable
         </h2>
         <p className="text-sm sm:text-base text-[#757d6f] mt-1">
-          Every number below is measured by our system, not estimated by humans.
+          Model outputs are estimates. The interface connects each workflow to stored evidence and backend results.
         </p>
       </div>
 

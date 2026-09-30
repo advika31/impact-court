@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ShieldCheck, ArrowRight, Lock, BarChart3, TreePine, Zap } from "lucide-react";
+import { ArrowRight, Lock, TreePine, FileCheck } from "lucide-react";
 
 interface CustomerHeroProps {
   onScrollToUpload: () => void;
@@ -18,7 +18,7 @@ export default function CustomerHero({ onScrollToUpload, onScrollToWorkflow }: C
         {/* Pill Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2d0000] text-[#eeead7] text-xs font-semibold shadow-lg shadow-[#2d0000]/15">
           <span className="w-2 h-2 rounded-full bg-[#cf2929] animate-pulse" />
-          <span>The World&rsquo;s First Adversarial AI Impact Auditor</span>
+          <span>Impact claims, connected to their field evidence</span>
           <span className="text-[#eeead7]/50">&bull;</span>
           <span className="text-[#eeead7]/80">Cloudinary Media Intelligence</span>
         </div>
@@ -33,8 +33,8 @@ export default function CustomerHero({ onScrollToUpload, onScrollToWorkflow }: C
 
         {/* Subtitle */}
         <p className="text-base sm:text-lg text-[#757d6f] max-w-2xl leading-relaxed">
-          Organizations generate thousands of field photos. Impact Court cross-examines visual evidence with real ML
-          vision, catches spoofed GPS, measures visible canopy change, and issues tamper-evident cryptographic certificates.
+          Upload project images, run metadata and duplicate checks, analyze claims against matched evidence, and issue
+          verifiable certificates and audit reports. Vision outputs are estimates and should be reviewed.
         </p>
 
         {/* Action Buttons */}
@@ -60,10 +60,10 @@ export default function CustomerHero({ onScrollToUpload, onScrollToWorkflow }: C
           <div className="p-6 rounded-3xl bg-white/50 border border-[#6d0808]/10 flex flex-col gap-2 backdrop-blur-sm hover:border-[#6d0808]/25 transition-all hover:-translate-y-1 shadow-sm hover:shadow-md">
             <div className="flex items-center gap-2 text-xs font-mono text-[#757d6f] uppercase tracking-widest">
               <TreePine className="w-4 h-4 text-[#6d0808]" />
-              <span>Measured Restoration</span>
+              <span>Forensic checks</span>
             </div>
-            <span className="text-4xl font-extrabold text-[#2d0000] tracking-tight mt-1">+31.2%</span>
-            <span className="text-sm text-[#757d6f]">Verified vegetation canopy growth</span>
+            <span className="text-3xl font-extrabold text-[#2d0000] tracking-tight mt-1">EXIF + pHash</span>
+            <span className="text-sm text-[#757d6f]">Location, time and reuse signals where available</span>
           </div>
 
           <div className="p-6 rounded-3xl bg-white/50 border border-[#6d0808]/10 flex flex-col gap-2 backdrop-blur-sm hover:border-[#6d0808]/25 transition-all hover:-translate-y-1 shadow-sm hover:shadow-md">
@@ -71,17 +71,17 @@ export default function CustomerHero({ onScrollToUpload, onScrollToWorkflow }: C
               <Lock className="w-4 h-4 text-[#6d0808]" />
               <span>Cryptographic Ledger</span>
             </div>
-            <span className="text-4xl font-extrabold text-[#2d0000] tracking-tight mt-1">100%</span>
-            <span className="text-sm text-[#757d6f]">Ed25519 signed Merkle tree proofs</span>
+            <span className="text-3xl font-extrabold text-[#2d0000] tracking-tight mt-1">Ed25519</span>
+            <span className="text-sm text-[#757d6f]">Signed Merkle certificate verification</span>
           </div>
 
           <div className="p-6 rounded-3xl bg-white/50 border border-[#6d0808]/10 flex flex-col gap-2 backdrop-blur-sm hover:border-[#6d0808]/25 transition-all hover:-translate-y-1 shadow-sm hover:shadow-md">
             <div className="flex items-center gap-2 text-xs font-mono text-[#757d6f] uppercase tracking-widest">
-              <Zap className="w-4 h-4 text-[#6d0808]" />
-              <span>Audit Speed</span>
+              <FileCheck className="w-4 h-4 text-[#6d0808]" />
+              <span>Reports</span>
             </div>
-            <span className="text-4xl font-extrabold text-[#2d0000] tracking-tight mt-1">&lt; 3 Sec</span>
-            <span className="text-sm text-[#757d6f]">From field upload to verified audit</span>
+            <span className="text-3xl font-extrabold text-[#2d0000] tracking-tight mt-1">PDF</span>
+            <span className="text-sm text-[#757d6f]">Export the claim audit and evidence links</span>
           </div>
         </div>
       </div>

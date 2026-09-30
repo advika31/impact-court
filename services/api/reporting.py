@@ -8,11 +8,14 @@ from reportlab.lib.styles import getSampleStyleSheet,ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate,Paragraph,Spacer,Table,TableStyle,KeepTogether,Image
 
-def create_claim_report(claim,project,subclaims,evidence_by_subclaim,certificate=None,thumbnails=None):
+def create_claim_report(claim,project,subclaims,evidence_by_subclaim,certificate=None,thumbnails=None,social_cards=None,certificate_valid=None):
  out=BytesIO();doc=SimpleDocTemplate(out,pagesize=letter,leftMargin=.6*inch,rightMargin=.6*inch,topMargin=.6*inch,bottomMargin=.6*inch)
  styles=getSampleStyleSheet();styles.add(ParagraphStyle(name="CenterTitle",parent=styles["Title"],alignment=TA_CENTER,textColor=colors.HexColor("#17324d")));styles.add(ParagraphStyle(name="SmallText",parent=styles["BodyText"],fontSize=8,leading=10))
  story=[Paragraph("Impact Court — Evidence Report",styles["CenterTitle"]),Spacer(1,10),Paragraph("<b>Project:</b> "+escape(project.name),styles["BodyText"]),Paragraph("<b>Claim:</b> "+escape(claim.text),styles["BodyText"]),Paragraph(f"<b>Verdict:</b> {escape(claim.overall_verdict or 'not audited')} &nbsp; <b>Confidence:</b> {claim.overall_confidence if claim.overall_confidence is not None else '—'}",styles["BodyText"]),Spacer(1,12)]
- if certificate:story += [Paragraph("<b>Certificate:</b> "+escape(certificate.id),styles["SmallText"]),Paragraph("<b>Merkle root:</b> "+escape(certificate.merkle_root),styles["SmallText"]),Spacer(1,8)]
+ if certificate:
+  story += [Paragraph("<b>Certificate:</b> "+escape(certificate.id),styles["SmallText"]),Paragraph("<b>Merkle root:</b> "+escape(certificate.merkle_root),styles["SmallText"])]
+  if certificate_valid is not None:story.append(Paragraph("<b>Certificate verification:</b> "+("valid" if certificate_valid else "failed"),styles["SmallText"]))
+  story.append(Spacer(1,8))
  for sc in subclaims:
   block=[Paragraph(f"<b>{escape(sc.type.title())}:</b> {escape(sc.statement)}",styles["Heading3"]),Paragraph(f"Verdict: {escape(sc.verdict or 'pending')} | Confidence: {sc.confidence if sc.confidence is not None else '—'}",styles["BodyText"])]
   if sc.reasons:block.append(Paragraph("Reasons: "+escape("; ".join(sc.reasons)),styles["SmallText"]))
@@ -32,5 +35,8 @@ def create_claim_report(claim,project,subclaims,evidence_by_subclaim,certificate
    t=Table(rows,colWidths=[.75*inch,1.7*inch,.8*inch,3.55*inch],repeatRows=1);t.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,0),colors.HexColor("#e7eef5")),("GRID",(0,0),(-1,-1),.35,colors.grey),("VALIGN",(0,0),(-1,-1),"TOP"),("FONTSIZE",(0,0),(-1,-1),8)]));block.append(t)
   else:block.append(Paragraph("No evidence assets matched this sub-claim.",styles["SmallText"]))
   block.append(Spacer(1,10));story.append(KeepTogether(block))
+ if social_cards:
+  story += [Paragraph("Cloudinary verified social cards",styles["Heading2"])]
+  for card in social_cards:story.append(Paragraph('<link href="'+escape(card["url"])+ '">'+escape(card["source_public_id"])+'</link>',styles["SmallText"]))
  story.append(Paragraph("Automated vision counts and scene changes are estimates. EXIF, location, and time are indicators, not proof of authenticity.",styles["SmallText"]))
  doc.build(story);return out.getvalue()

@@ -18,18 +18,18 @@ export default function CustomerWorkflow() {
     {
       num: "02",
       title: "Vision ML Analysis",
-      tag: "OpenCLIP & SegFormer",
-      desc: "Our vision pipeline classifies images into 5 verified categories. SegFormer measures scene area percentages. OpenCV aligns before/after pairs with SIFT + RANSAC homography.",
+      tag: "Gemini + trained classifier",
+      desc: "The API uses Gemini for image interpretation and embeddings, and loads the repository activity classifier with its OpenCLIP encoder when the model is available. Before/after values are estimates.",
       icon: Eye,
-      highlights: ["512-d semantic embeddings", "SIFT + RANSAC alignment", "Vegetation & waste delta %"],
+      highlights: ["Vector-backed semantic search", "Trained activity classifier when loadable", "Estimated counts and scene changes"],
     },
     {
       num: "03",
       title: "Anti-Fraud Inspection",
       tag: "Red-Team Defense",
-      desc: "Impact Court actively attempts to disprove claims. It flags reused photos across projects, GPS coordinates outside declared perimeters, altered timestamps, and editing software traces.",
+      desc: "The audit checks available capture metadata against a project's declared site and date window and looks for pHash duplicates. Missing or conflicting metadata is treated as a signal, not proof of fraud.",
       icon: ShieldAlert,
-      highlights: ["pHash duplicate matching", "Haversine geo-fencing", "Tamper & editing detection"],
+      highlights: ["Perceptual-hash duplicate candidates", "GPS and capture-window checks", "Forensic flags with stated limits"],
     },
     {
       num: "04",
@@ -55,7 +55,7 @@ export default function CustomerWorkflow() {
           From Raw Photo to Verified Proof
         </h2>
         <p className="text-sm sm:text-base text-[#757d6f] mt-1">
-          Four automated stages turn field evidence into indisputable, cryptographically signed proof.
+          Follow each step from upload through analysis and signed certificate. Model estimates and forensic signals need human review.
         </p>
       </div>
 

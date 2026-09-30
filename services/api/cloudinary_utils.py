@@ -80,9 +80,12 @@ def build_verified_badge_url(public_id: str) -> str:
     """Overlays a 'VERIFIED' text badge - used on certificate/report images."""
     url, _ = cloudinary.utils.cloudinary_url(
         public_id,
-        transformation=[{
-            "overlay": {"font_family": "Arial", "font_size": 40, "font_weight": "bold", "text": "VERIFIED"},
-            "color": "#00c853", "gravity": "south_east", "x": 20, "y": 20,
-        }],
+        transformation=[
+            {"width": 1200, "height": 630, "crop": "fill"},
+            {
+                "overlay": {"font_family": "Arial", "font_size": 40, "font_weight": "bold", "text": "VERIFIED"},
+                "color": "#00c853", "gravity": "south_east", "x": 20, "y": 20,
+            },
+        ],
     )
     return url
