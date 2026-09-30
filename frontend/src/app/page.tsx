@@ -28,11 +28,24 @@ import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import RedTeamArena from "@/components/RedTeamArena";
 import CertificateVerifier from "@/components/CertificateVerifier";
 import ReportSocialCards from "@/components/ReportSocialCards";
+import AdminLogin from "@/components/AdminLogin";
+import { LogOut } from "lucide-react";
 
 import { Asset, Certificate, fetchAssets, fetchProjects, Project } from "@/lib/api";
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<"customer" | "admin">("customer");
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isAuth = sessionStorage.getItem("impact_court_admin_auth") === "true";
+      if (isAuth) {
+        setIsAdminAuthenticated(true);
+      }
+    }
+  }, []);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -138,19 +151,42 @@ export default function Home() {
           <div className="flex items-center gap-3">
             {isCustomer ? (
               <button
-                onClick={() => setViewMode("admin")}
+                onClick={() => {
+                  if (isAdminAuthenticated) {
+                    setViewMode("admin");
+                  } else {
+                    setShowAdminLogin(true);
+                  }
+                }}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#2d0000] hover:bg-[#3d0505] text-[#eeead7] font-bold text-xs transition-all shadow-lg shadow-[#2d0000]/20 hover:scale-[1.02]"
               >
                 <span>Admin ML Portal</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
-              <button
-                onClick={() => setViewMode("customer")}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#2d0000] hover:bg-[#3d0303] text-[#eeead7] border border-[#eeead7]/20 font-semibold text-xs transition-all"
-              >
-                <span>&larr; Back to Customer View</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setViewMode("customer")}
+                  className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#2d0000] hover:bg-[#3d0303] text-[#eeead7] border border-[#eeead7]/20 font-semibold text-xs transition-all"
+                >
+                  <span>&larr; Back to Customer View</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAdminAuthenticated(false);
+                    if (typeof window !== "undefined") {
+                      sessionStorage.removeItem("impact_court_admin_auth");
+                      sessionStorage.removeItem("impact_court_admin_user");
+                    }
+                    setViewMode("customer");
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[#6d0808]/50 hover:bg-[#6d0808] text-[#eeead7] border border-[#eeead7]/20 text-xs transition-all font-medium"
+                  title="Log out from Admin ML Portal"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -205,6 +241,20 @@ export default function Home() {
         )}
       </header>
 
+      {/* ===== 3D GYROSCOPIC ADMIN LOGIN OVERLAY ===== */}
+      {showAdminLogin && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <AdminLogin
+            onSuccess={() => {
+              setIsAdminAuthenticated(true);
+              setShowAdminLogin(false);
+              setViewMode("admin");
+            }}
+            onBack={() => setShowAdminLogin(false)}
+          />
+        </div>
+      )}
+
       {/* ===== CUSTOMER VIEW ===== */}
       {isCustomer && (
         <main className="flex-1 flex flex-col">
@@ -219,7 +269,15 @@ export default function Home() {
           <CustomerUpload
             projects={projects}
             onProjectCreated={(project) => { setProjects((current) => [project, ...current]); setSelectedProject(project); setApiError(""); }}
-            onSuccessNavigateToAdmin={(claimId) => { setActiveClaimId(claimId); setAdminTab("claim"); setViewMode("admin"); }}
+            onSuccessNavigateToAdmin={(claimId) => {
+              setActiveClaimId(claimId);
+              setAdminTab("claim");
+              if (isAdminAuthenticated) {
+                setViewMode("admin");
+              } else {
+                setShowAdminLogin(true);
+              }
+            }}
           />
         </main>
       )}

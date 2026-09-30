@@ -12,6 +12,9 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Impact Court — AI-Powered Sustainability Auditor",
   description: "Tamper-evident sustainability media intelligence. Prove your impact, defeat greenwashing.",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
