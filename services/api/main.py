@@ -193,7 +193,9 @@ def compare_assets(body:CompareIn,db:Session=Depends(get_db)):
 # Rank evidence by a cross-modal vector, then boost explicit activity matches. Keep contradictory forensic evidence.
 def _cosine(a,b):
  if a is None or b is None or len(a)==0 or len(b)==0 or len(a)!=len(b):return 0.
- dot=sum(x*y for x,y in zip(a,b));na=math.sqrt(sum(x*x for x in a));nb=math.sqrt(sum(y*y for y in b));return dot/(na*nb) if na and nb else 0.
+ # pgvector may return NumPy scalar values; cast each component so scores
+ # remain JSON-serializable Python floats throughout audit persistence.
+ dot=sum(float(x)*float(y) for x,y in zip(a,b));na=math.sqrt(sum(float(x)*float(x) for x in a));nb=math.sqrt(sum(float(y)*float(y) for y in b));return float(dot/(na*nb)) if na and nb else 0.
 def _retrieve(sc,assets):
  params=sc.params_json or {};query=" ".join([sc.statement,str(params.get("label","")),str(params.get("target","")),str(params.get("metric","")),str(params.get("site",""))])
  try:v=vision.embed_text(query)
