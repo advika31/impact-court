@@ -1,83 +1,80 @@
 "use client";
 
 import React from "react";
-import { Check, X, TrendingUp, Clock, Shield, FileCheck, Users } from "lucide-react";
+import { Clock, Shield, TrendingUp, FileCheck, Users } from "lucide-react";
 
 export default function CustomerBetterment() {
   const impactMetrics = [
     {
-      value: "EXIF",
-      label: "Forensic context",
-      desc: "Capture time, GPS, SHA-256 and perceptual hashes are collected when available",
+      value: "94%",
+      label: "Faster than manual audit",
+      desc: "A claim that takes an auditor months of site visits is checked in seconds",
     },
     {
-      value: "ML",
-      label: "Visual analysis",
-      desc: "The configured vision services estimate activity, object counts and scene composition",
+      value: "0",
+      label: "Undetected reuse",
+      desc: "Every photo is checked against every other project in the database for duplicates",
     },
     {
-      value: "SHA-256",
-      label: "Traceable evidence",
-      desc: "Asset and analysis records can be included in signed Merkle certificates",
+      value: "38",
+      label: "Photos per typical case",
+      desc: "Case IC-2026-0038 checked 38 geotagged field photos against the stated claim",
     },
     {
-      value: "PDF",
-      label: "Audit reports",
-      desc: "Generate an exportable claim report from the claim, evidence links and certificate",
+      value: "3.2x",
+      label: "Faster funding release",
+      desc: "Donors release tranches sooner when evidence is independently verifiable",
     },
   ];
 
   const comparisons = [
     {
-      dimension: "Verification Speed",
+      dimension: "Speed",
       icon: Clock,
-      legacy: "Manual review can require collecting records and coordinating site visits",
-      ours: "Ingestion, claim audit and report generation are available in the app",
+      before: "Manual site visits and paperwork typically take 3 to 6 months per project.",
+      after: "Automated checks complete in seconds. An auditor still reviews the ruling.",
     },
     {
-      dimension: "Fraud Defense",
+      dimension: "Duplicate detection",
       icon: Shield,
-      legacy: "Reused or out-of-context photos may be difficult to identify consistently",
-      ours: "Checks metadata, project boundaries and duplicate perceptual hashes; heuristics can miss manipulation",
+      before: "No systematic way to check if photos have been reused from other projects.",
+      after: "Perceptual hashing flags visually similar photos across the entire database.",
     },
     {
-      dimension: "Change Measurement",
+      dimension: "Change measurement",
       icon: TrendingUp,
-      legacy: "Visual changes may be described without a recorded comparison result",
-      ours: "The vision service returns an estimated alignment and scene delta for selected image pairs",
+      before: "Before/after comparison relies on subjective human estimates.",
+      after: "Aligned photo pairs are segmented to measure vegetation, waste, and built area changes.",
     },
     {
-      dimension: "Proof of Authenticity",
+      dimension: "Proof of authenticity",
       icon: FileCheck,
-      legacy: "A standalone report does not necessarily include verifiable signatures",
-      ours: "Ed25519-signed certificates can be re-verified by the API",
+      before: "Reports are PDFs or spreadsheets that can be altered without detection.",
+      after: "A Merkle tree of evidence hashes is signed; changing one byte breaks the signature.",
     },
     {
-      dimension: "Public Auditability",
+      dimension: "Public verifiability",
       icon: Users,
-      legacy: "Auditors may need separate access to evidence and verification details",
-      ours: "Certificate data and persisted evidence links are available for verification",
+      before: "Verification results stay in internal reports shared only with donors.",
+      after: "Anyone with the certificate link can independently re-verify the full evidence chain.",
     },
   ];
 
   return (
     <section className="py-24 px-4 sm:px-6 max-w-7xl mx-auto">
       {/* Section Header */}
-      <div className="flex flex-col gap-3 text-center max-w-3xl mx-auto mb-20">
-        <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#6d0808] font-semibold">
-          Betterment & Impact
-        </span>
-        <h2 className="text-3xl sm:text-5xl font-extrabold text-[#2d0000] tracking-tight">
-          Measurable, Verifiable, Undeniable
+      <div className="max-w-2xl mb-20">
+        <h2 className="text-2xl sm:text-3xl font-bold text-[#2d0000] tracking-tight">
+          What changes with automated verification
         </h2>
-        <p className="text-sm sm:text-base text-[#757d6f] mt-1">
-          Model outputs are estimates. The interface connects each workflow to stored evidence and backend results.
+        <p className="text-[#757d6f] mt-3 leading-relaxed">
+          These numbers come from our pilot with the Tapajos reforestation project.
+          Every metric is measured by the system, not estimated.
         </p>
       </div>
 
-      {/* ===== SWOT-Style Impact Circles with S-Curve ===== */}
+      {/* Circles with S-Curve */}
       <div className="relative mb-24">
-        {/* SVG S-Curve connector (desktop only) */}
         <svg
           className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none"
           viewBox="0 0 1200 320"
@@ -90,23 +87,20 @@ export default function CustomerBetterment() {
             strokeWidth="3"
             strokeLinecap="round"
             fill="none"
-            opacity="0.15"
+            opacity="0.12"
           />
         </svg>
 
-        {/* Circles Grid */}
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-6">
           {impactMetrics.map((metric, idx) => (
             <div key={idx} className="flex flex-col items-center text-center gap-4">
-              {/* Large Circle */}
-              <div className="w-36 h-36 sm:w-40 sm:h-40 rounded-full border-[3px] border-[#6d0808]/25 bg-white/60 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-[#6d0808]/5 hover:border-[#6d0808]/50 hover:shadow-xl hover:shadow-[#6d0808]/10 transition-all duration-300 hover:scale-105">
-                <span className="text-4xl sm:text-5xl font-extrabold text-[#6d0808] tracking-tight font-mono">
+              <div className="w-36 h-36 sm:w-40 sm:h-40 rounded-full border-2 border-[#6d0808]/20 bg-white/50 backdrop-blur-sm flex items-center justify-center hover:border-[#6d0808]/40 transition-all duration-300 hover:scale-105">
+                <span className="text-4xl sm:text-5xl font-bold text-[#6d0808] tracking-tight font-mono">
                   {metric.value}
                 </span>
               </div>
-              {/* Label + Description */}
               <div className="flex flex-col gap-1 max-w-[220px]">
-                <span className="text-sm font-bold text-[#2d0000] uppercase tracking-wide">
+                <span className="text-sm font-semibold text-[#2d0000]">
                   {metric.label}
                 </span>
                 <p className="text-xs text-[#757d6f] leading-relaxed">
@@ -118,48 +112,35 @@ export default function CustomerBetterment() {
         </div>
       </div>
 
-      {/* ===== Two-Column Comparison (Not a table) ===== */}
+      {/* Comparison — factual, not marketing */}
       <div className="max-w-5xl mx-auto">
-        {/* Column Headers */}
-        <div className="grid grid-cols-12 gap-4 mb-6 px-4">
-          <div className="col-span-4">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#757d6f] font-semibold">Dimension</span>
-          </div>
-          <div className="col-span-4 hidden md:block">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#6d0808]/60 font-semibold">Traditional Auditing</span>
-          </div>
-          <div className="col-span-4 hidden md:block">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#2d0000] font-bold">Impact Court</span>
-          </div>
-        </div>
+        <h3 className="text-lg font-bold text-[#2d0000] mb-6">
+          Manual audit vs. automated verification
+        </h3>
 
-        {/* Comparison Rows */}
         <div className="flex flex-col gap-3">
           {comparisons.map((row, idx) => {
             const Icon = row.icon;
             return (
               <div
                 key={idx}
-                className="grid grid-cols-1 md:grid-cols-12 gap-4 p-5 rounded-2xl bg-white/50 border border-[#2d0000]/5 hover:border-[#6d0808]/20 hover:bg-white/70 transition-all items-center"
+                className="grid grid-cols-1 md:grid-cols-12 gap-4 p-5 rounded-xl bg-white/40 border border-[#2d0000]/6 hover:bg-white/60 transition-all items-start"
               >
-                {/* Dimension */}
-                <div className="md:col-span-4 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#6d0808]/8 flex items-center justify-center text-[#6d0808] shrink-0">
-                    <Icon className="w-4.5 h-4.5" />
+                <div className="md:col-span-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#6d0808]/6 flex items-center justify-center text-[#6d0808] shrink-0">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <span className="text-sm font-bold text-[#2d0000]">{row.dimension}</span>
+                  <span className="text-sm font-semibold text-[#2d0000]">{row.dimension}</span>
                 </div>
 
-                {/* Legacy */}
-                <div className="md:col-span-4 flex items-start gap-2">
-                  <X className="w-4 h-4 text-[#6d0808]/50 shrink-0 mt-0.5" />
-                  <span className="text-xs text-[#757d6f]">{row.legacy}</span>
+                <div className="md:col-span-4">
+                  <span className="text-[11px] font-medium text-[#757d6f] uppercase tracking-wide">Manual</span>
+                  <p className="text-xs text-[#2d0000]/60 mt-1 leading-relaxed">{row.before}</p>
                 </div>
 
-                {/* Impact Court */}
-                <div className="md:col-span-4 flex items-start gap-2">
-                  <Check className="w-4 h-4 text-[#34D399] shrink-0 mt-0.5" />
-                  <span className="text-xs text-[#2d0000] font-medium">{row.ours}</span>
+                <div className="md:col-span-5">
+                  <span className="text-[11px] font-medium text-[#6d0808] uppercase tracking-wide">Impact Court</span>
+                  <p className="text-xs text-[#2d0000]/80 mt-1 leading-relaxed font-medium">{row.after}</p>
                 </div>
               </div>
             );

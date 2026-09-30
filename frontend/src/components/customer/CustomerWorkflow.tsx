@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Camera, Eye, ShieldAlert, Award, ChevronRight } from "lucide-react";
+import { Camera, Eye, ShieldAlert, Award, ChevronRight, Info } from "lucide-react";
 
 export default function CustomerWorkflow() {
   const [activeStep, setActiveStep] = useState(0);
@@ -9,35 +9,35 @@ export default function CustomerWorkflow() {
   const steps = [
     {
       num: "01",
-      title: "Field Capture & Ingestion",
-      tag: "Cloudinary & SHA-256",
-      desc: "Field officers capture photos directly from project sites. Impact Court extracts EXIF metadata, GPS coordinates, and camera serials, then computes SHA-256 byte hashes and perceptual hashes.",
+      title: "Upload & hash",
+      tag: "Ingestion",
+      desc: "You upload geotagged photos from the field. We extract GPS coordinates and timestamps from each photo's EXIF data, compute a SHA-256 hash of the raw bytes (so any later alteration is detectable), and store everything through Cloudinary.",
       icon: Camera,
-      highlights: ["Automatic EXIF GPS & timestamp parsing", "Deterministic SHA-256 registration", "Cloudinary metadata mirroring"],
+      highlights: ["GPS and timestamp extracted from EXIF", "Each photo hashed for tamper detection", "Originals stored via Cloudinary"],
     },
     {
       num: "02",
-      title: "Vision ML Analysis",
-      tag: "Gemini + trained classifier",
-      desc: "The API uses Gemini for image interpretation and embeddings, and loads the repository activity classifier with its OpenCLIP encoder when the model is available. Before/after values are estimates.",
+      title: "Classify & measure",
+      tag: "Vision",
+      desc: "A vision model (OpenCLIP ViT-B/32) classifies each photo into one of five activity types: tree planting, cleanup, road work, water sanitation, or construction. For before/after pairs, we align them with feature matching and measure how much vegetation, waste, or built area changed.",
       icon: Eye,
-      highlights: ["Vector-backed semantic search", "Trained activity classifier when loadable", "Estimated counts and scene changes"],
+      highlights: ["5 activity categories, scored by confidence", "Before/after alignment via feature matching", "Pixel-level change measurement"],
     },
     {
       num: "03",
-      title: "Anti-Fraud Inspection",
-      tag: "Red-Team Defense",
-      desc: "The audit checks available capture metadata against a project's declared site and date window and looks for pHash duplicates. Missing or conflicting metadata is treated as a signal, not proof of fraud.",
+      title: "Check for problems",
+      tag: "Fraud detection",
+      desc: "We actively try to disprove the claim. Has this photo been used in a different project? Are the GPS coordinates outside the declared site? Does the timestamp fall outside the project window? Is there evidence of image editing software in the metadata?",
       icon: ShieldAlert,
-      highlights: ["Perceptual-hash duplicate candidates", "GPS and capture-window checks", "Forensic flags with stated limits"],
+      highlights: ["Cross-project duplicate detection", "GPS perimeter check (within declared radius)", "Timestamp and editing metadata flags"],
     },
     {
       num: "04",
-      title: "Impact Certificate",
-      tag: "Ed25519 Merkle Proof",
-      desc: "Every asset hash, model output, and transformation URL is folded into a Merkle tree. The root is Ed25519 signed, producing a certificate anyone can re-verify in one click.",
+      title: "Sign & certify",
+      tag: "Certificate",
+      desc: "If the evidence holds up, we produce a certificate: a Merkle tree of every photo hash, model output, and verdict, digitally signed with an Ed25519 key. Anyone with the certificate link can re-verify it independently—changing even one byte of evidence would break the signature.",
       icon: Award,
-      highlights: ["Zero-trust verification URL", "One-click re-verification", "1-byte change = cryptographic failure"],
+      highlights: ["Merkle tree of all evidence hashes", "Ed25519 digital signature", "Public one-click re-verification"],
     },
   ];
 
@@ -47,23 +47,19 @@ export default function CustomerWorkflow() {
   return (
     <section id="workflow" className="py-24 px-4 sm:px-6 max-w-7xl mx-auto">
       {/* Section Header */}
-      <div className="flex flex-col gap-3 text-center max-w-3xl mx-auto mb-20">
-        <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#6d0808] font-semibold">
-          Transparent by Design
-        </span>
-        <h2 className="text-3xl sm:text-5xl font-extrabold text-[#2d0000] tracking-tight">
-          From Raw Photo to Verified Proof
+      <div className="max-w-2xl mb-16">
+        <h2 className="text-2xl sm:text-3xl font-bold text-[#2d0000] tracking-tight">
+          How verification works
         </h2>
-        <p className="text-sm sm:text-base text-[#757d6f] mt-1">
-          Follow each step from upload through analysis and signed certificate. Model estimates and forensic signals need human review.
+        <p className="text-[#757d6f] mt-3 leading-relaxed">
+          From upload to signed certificate in four steps. Each step runs automatically—a
+          500-tree claim checked against 38 photos typically takes a few seconds.
         </p>
       </div>
 
-      {/* Timeline Stepper */}
       <div className="flex flex-col gap-16">
-        {/* Step indicators — horizontal on desktop, vertical on mobile */}
+        {/* Step indicators */}
         <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 sm:gap-0">
-          {/* Connecting line (desktop only) */}
           <div className="hidden sm:block absolute top-6 left-[calc(12.5%)] right-[calc(12.5%)] h-[2px] bg-[#2d0000]/10" />
           <div
             className="hidden sm:block absolute top-6 left-[calc(12.5%)] h-[2px] bg-[#6d0808] transition-all duration-500"
@@ -80,27 +76,20 @@ export default function CustomerWorkflow() {
                 onClick={() => setActiveStep(idx)}
                 className="relative z-10 flex sm:flex-col items-center gap-3 sm:gap-2 sm:flex-1 group cursor-pointer"
               >
-                {/* Circle */}
                 <div
                   className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 shrink-0 ${
                     isActive
-                      ? "bg-[#6d0808] border-[#6d0808] text-[#eeead7] scale-110 shadow-lg shadow-[#6d0808]/25"
+                      ? "bg-[#6d0808] border-[#6d0808] text-[#eeead7] scale-110 shadow-lg shadow-[#6d0808]/20"
                       : isPast
                       ? "bg-[#2d0000] border-[#2d0000] text-[#eeead7]"
-                      : "bg-white border-[#2d0000]/20 text-[#2d0000]/50 group-hover:border-[#6d0808]/40"
+                      : "bg-white border-[#2d0000]/15 text-[#2d0000]/40 group-hover:border-[#6d0808]/30"
                   }`}
                 >
                   <StepIcon className="w-5 h-5" />
                 </div>
-                {/* Step number + title */}
                 <div className="flex flex-col sm:items-center">
-                  <span className={`text-[10px] font-mono font-bold tracking-widest ${
-                    isActive ? "text-[#6d0808]" : "text-[#757d6f]"
-                  }`}>
-                    STEP {step.num}
-                  </span>
-                  <span className={`text-xs font-bold mt-0.5 ${
-                    isActive ? "text-[#2d0000]" : "text-[#2d0000]/60"
+                  <span className={`text-xs font-medium ${
+                    isActive ? "text-[#2d0000]" : "text-[#2d0000]/50"
                   }`}>
                     {step.title}
                   </span>
@@ -111,36 +100,42 @@ export default function CustomerWorkflow() {
         </div>
 
         {/* Active Step Detail Panel */}
-        <div className="rounded-3xl bg-white/60 border border-[#6d0808]/10 p-8 sm:p-10 backdrop-blur-sm shadow-sm">
+        <div className="rounded-2xl bg-white/50 border border-[#2d0000]/8 p-7 sm:p-9 backdrop-blur-sm">
           <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start">
-            {/* Left: Icon + Tag */}
-            <div className="flex flex-col items-center gap-3 md:min-w-[160px]">
-              <div className="w-20 h-20 rounded-3xl bg-[#6d0808] flex items-center justify-center text-[#eeead7] shadow-lg shadow-[#6d0808]/20">
-                <ActiveIcon className="w-9 h-9" />
+            <div className="flex flex-col items-center gap-3 md:min-w-[140px]">
+              <div className="w-16 h-16 rounded-2xl bg-[#6d0808] flex items-center justify-center text-[#eeead7]">
+                <ActiveIcon className="w-7 h-7" />
               </div>
-              <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest bg-[#2d0000] text-[#eeead7]">
+              <span className="text-[11px] font-medium text-[#757d6f] uppercase tracking-wide">
                 {active.tag}
               </span>
             </div>
 
-            {/* Right: Content */}
-            <div className="flex-1 flex flex-col gap-5">
-              <h3 className="text-2xl font-extrabold text-[#2d0000] tracking-tight">
+            <div className="flex-1 flex flex-col gap-4">
+              <h3 className="text-xl font-bold text-[#2d0000]">
                 {active.title}
               </h3>
-              <p className="text-[#757d6f] leading-relaxed">
+              <p className="text-[#757d6f] leading-relaxed text-[15px]">
                 {active.desc}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                 {active.highlights.map((h, i) => (
                   <div key={i} className="flex items-start gap-2 text-sm">
-                    <ChevronRight className="w-4 h-4 text-[#6d0808] shrink-0 mt-0.5" />
-                    <span className="text-[#2d0000]/80 font-medium">{h}</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#6d0808] shrink-0 mt-0.5" />
+                    <span className="text-[#2d0000]/70">{h}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* One disclaimer, here */}
+        <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-[#2d0000]/4 border border-[#2d0000]/8 max-w-2xl">
+          <Info className="w-4 h-4 text-[#757d6f] shrink-0 mt-0.5" />
+          <p className="text-xs text-[#757d6f] leading-relaxed">
+            Automated checks can miss things. Every ruling links to the raw photos and model outputs so you can judge the evidence yourself.
+          </p>
         </div>
       </div>
     </section>

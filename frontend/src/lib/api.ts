@@ -39,6 +39,42 @@ export interface Asset {
   created_at?: string;
 }
 
+export const DEMO_PROJECTS: Project[] = [
+  {
+    id: "proj_tapajos_01",
+    name: "Tapajos Agroforestry, Site A",
+    site_lat: -3.1256,
+    site_lng: -55.8422,
+    site_radius_km: 2.5,
+    window_start: "2026-03-01",
+    window_end: "2026-06-30",
+  },
+  {
+    id: "proj_sundarbans_02",
+    name: "Sundarbans Mangrove Project, Site B",
+    site_lat: 21.9497,
+    site_lng: 89.1833,
+    site_radius_km: 3.0,
+    window_start: "2026-01-15",
+    window_end: "2026-05-15",
+  },
+];
+
+export const DEMO_ASSETS: Asset[] = [
+  {
+    id: "asset_demo_01",
+    project_id: "proj_tapajos_01",
+    cloudinary_public_id: "sample_tapajos_01",
+    resource_type: "image",
+    sha256: "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+    capture_time: "2026-05-10T11:24:00Z",
+    lat: -3.1245,
+    lng: -55.8415,
+    activity_label: "tree_planting",
+    activity_score: 0.96,
+  },
+];
+
 export interface SubClaim {
   id: string;
   claim_id: string;

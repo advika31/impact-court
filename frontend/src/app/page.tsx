@@ -17,7 +17,7 @@ import {
 // Customer-Facing Components
 import CustomerHero from "@/components/customer/CustomerHero";
 import CustomerWorkflow from "@/components/customer/CustomerWorkflow";
-import CustomerBetterment from "@/components/customer/CustomerBetterment";
+import CustomerEvidence from "@/components/customer/CustomerEvidence";
 import CustomerUpload from "@/components/customer/CustomerUpload";
 
 // Admin / Auditor Components
@@ -103,51 +103,41 @@ export default function Home() {
           {/* Logo & Brand */}
           <div
             onClick={() => setViewMode("customer")}
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#6d0808] to-[#cf2929] flex items-center justify-center text-[#eeead7] shadow-lg shadow-[#6d0808]/20 border border-[#6d0808]/30 group-hover:scale-105 transition-transform">
-              <ShieldCheck className="w-6 h-6 stroke-[2.2]" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className={`font-extrabold text-lg tracking-tight ${
-                  isCustomer ? "text-[#2d0000]" : "text-[#eeead7]"
-                }`}>IMPACT COURT</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#6d0808] text-[#eeead7] border border-[#6d0808]/30">
-                  {isCustomer ? "PUBLIC PORTAL" : "ADMIN AUDITOR"}
-                </span>
-              </div>
-              <span className="text-[10px] font-mono text-[#757d6f]">
-                AI-Powered Sustainability Media Auditor
-              </span>
-            </div>
+            <ShieldCheck className="w-5 h-5 text-[#6d0808] stroke-[2.2]" />
+            <span className={`font-bold text-base sm:text-lg tracking-tight ${
+              isCustomer ? "text-[#2d0000]" : "text-[#eeead7]"
+            }`}>
+              Impact Court
+            </span>
           </div>
 
           {/* Customer Navigation Links */}
           {isCustomer && (
-            <nav className="hidden md:flex items-center gap-8 text-xs font-semibold tracking-wide text-[#2d0000]/70">
+            <nav className="hidden md:flex items-center gap-7 text-xs sm:text-sm font-medium text-[#2d0000]/80">
               <button
-                onClick={() => scrollToSection("workflow")}
-                className="hover:text-[#6d0808] transition-colors"
+                onClick={() => scrollToSection("cases")}
+                className="hover:text-[#6d0808] transition-colors cursor-pointer"
               >
-                How It Works
+                Verify a certificate
               </button>
               <button
-                onClick={() => scrollToSection("betterment")}
-                className="hover:text-[#6d0808] transition-colors"
+                onClick={() => scrollToSection("workflow")}
+                className="hover:text-[#6d0808] transition-colors cursor-pointer"
               >
-                Impact & Betterment
+                How it works
               </button>
               <button
                 onClick={() => scrollToSection("upload")}
-                className="hover:text-[#6d0808] transition-colors"
+                className="hover:text-[#6d0808] transition-colors cursor-pointer"
               >
-                Upload Evidence
+                Submit evidence
               </button>
             </nav>
           )}
 
-          {/* Mode Switcher */}
+          {/* Mode Switcher / Sign in */}
           <div className="flex items-center gap-3">
             {isCustomer ? (
               <button
@@ -158,10 +148,10 @@ export default function Home() {
                     setShowAdminLogin(true);
                   }
                 }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#2d0000] hover:bg-[#3d0505] text-[#eeead7] font-bold text-xs transition-all shadow-lg shadow-[#2d0000]/20 hover:scale-[1.02]"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#2d0000] hover:text-[#6d0808] transition-colors cursor-pointer group"
               >
-                <span>Admin ML Portal</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Sign in</span>
+                <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
               </button>
             ) : (
               <div className="flex items-center gap-2">
@@ -261,16 +251,15 @@ export default function Home() {
           <CustomerHero
             onScrollToUpload={() => scrollToSection("upload")}
             onScrollToWorkflow={() => scrollToSection("workflow")}
+            onScrollToCases={() => scrollToSection("cases")}
           />
           <CustomerWorkflow />
-          <div id="betterment">
-            <CustomerBetterment />
-          </div>
+          <CustomerEvidence />
           <CustomerUpload
             projects={projects}
             onProjectCreated={(project) => { setProjects((current) => [project, ...current]); setSelectedProject(project); setApiError(""); }}
             onSuccessNavigateToAdmin={(claimId) => {
-              setActiveClaimId(claimId);
+              if (claimId) setActiveClaimId(claimId);
               setAdminTab("claim");
               if (isAdminAuthenticated) {
                 setViewMode("admin");
@@ -395,24 +384,46 @@ export default function Home() {
       )}
 
       {/* ===== FOOTER ===== */}
-      <footer className={`border-t py-8 text-center text-xs font-mono mt-auto ${
+      <footer className={`border-t py-8 text-xs mt-auto ${
         isCustomer
-          ? "bg-[#2d0000] border-[#2d0000] text-[#eeead7]/70"
+          ? "bg-[#eeead7] border-[#2d0000]/15 text-[#2d0000]/70"
           : "bg-[#160202] border-[#eeead7]/10 text-[#757d6f]"
       }`}>
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#6d0808]" />
-            <span className={`font-bold font-sans ${isCustomer ? "text-[#eeead7]" : "text-[#eeead7]/90"}`}>Impact Court</span>
-            <span>&bull;</span>
-            <span>Tamper-Evident Sustainability Intelligence</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-left text-xs">
+            <span className="font-semibold text-[#2d0000]">Impact Court</span>
+            <span className="mx-2">&middot;</span>
+            <span>Built by Impact Court Forensics</span>
+            <span className="mx-2">&middot;</span>
+            <span>Bengaluru, India</span>
           </div>
-          <div className="flex items-center gap-4 text-[11px]">
-            <span>Cloudinary Media Engine</span>
-            <span>&bull;</span>
-            <span>Trained activity model</span>
-            <span>&bull;</span>
-            <span>Ed25519 Merkle Proofs</span>
+          <div className="flex items-center gap-6 font-medium text-xs text-[#2d0000]/80">
+            <button
+              onClick={() => scrollToSection("workflow")}
+              className="hover:text-[#6d0808] transition-colors cursor-pointer"
+            >
+              How verification works
+            </button>
+            <button
+              onClick={() => scrollToSection("workflow")}
+              className="hover:text-[#6d0808] transition-colors cursor-pointer"
+            >
+              Methodology
+            </button>
+            <a
+              href="mailto:contact@impactcourt.org"
+              className="hover:text-[#6d0808] transition-colors"
+            >
+              Contact
+            </a>
+            <a
+              href="https://github.com/advika31/impact-court"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-[#6d0808] transition-colors"
+            >
+              GitHub
+            </a>
           </div>
         </div>
       </footer>
