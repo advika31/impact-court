@@ -45,6 +45,10 @@ cosine-search index. Use `.env.example` as the variable list. Never commit
 - The repository's `models/activity_classifier_final.pkl` is used with the
   OpenCLIP encoder when both can load. If unavailable, Gemini image
   interpretation supplies the activity estimate when configured.
+- On Render, the memory-heavy local OpenCLIP/classifier is disabled by default
+  (`RENDER=true`) so image ingestion fits small instances; Gemini still handles
+  embeddings, image interpretation, object-count estimates, and comparisons.
+  Set `ENABLE_LOCAL_ACTIVITY_MODEL=true` only on an instance with enough RAM.
 - Claim audits retrieve a small set of relevant assets, persist `Evidence`
   rows, use per-asset forensic signals, and calculate approximate count/change
   agreement when the relevant model output is available.

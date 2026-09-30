@@ -7,6 +7,11 @@ Cloudinary account and Gemini API key are required for the complete media flow.
 Vision counts and scene measurements are estimates and should not be treated as
 ground truth.
 
+On Render's 512 MB free instance, the local OpenCLIP activity classifier is
+disabled by default to avoid out-of-memory restarts. Gemini remains responsible
+for hosted image analysis. The local classifier remains enabled for local
+development through `.env.example`.
+
 ## 1. Configure credentials and signing key
 
 1. From the repository root, copy the environment template and edit it:

@@ -37,6 +37,17 @@ def _unit(v):
     except (TypeError,ValueError):return None
 def _trained_activity(b):
     """Use the repository's trained classifier only when both its weights and CLIP encoder loaded."""
+    # Loading the local classifier also loads OpenCLIP/PyTorch weights, which
+    # can exceed the memory limit of a small hosted API instance. Keep it on
+    # for local development, but default it off on Render unless explicitly
+    # enabled. Gemini analysis below remains available on hosted deployments.
+    enabled=os.getenv("ENABLE_LOCAL_ACTIVITY_MODEL")
+    if enabled is None:
+        enabled=os.getenv("RENDER", "").lower() != "true"
+    else:
+        enabled=enabled.strip().lower() in {"1", "true", "yes", "on"}
+    if not enabled:
+        return None
     try:
         bundle=local_vision._get_classifier_bundle()
         if not bundle:return None
